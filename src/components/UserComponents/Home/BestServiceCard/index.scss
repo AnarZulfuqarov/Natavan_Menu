@@ -1,0 +1,114 @@
+#bestServCard{
+  padding: 24px 22px;
+  border: 1px solid #E3E3E3;
+  background: #FFF;
+  cursor: pointer;
+  @media screen and (max-width: 576px){
+    padding: 14px;
+  }
+  &:hover{
+    .image{
+      div{
+        border-radius: 42px 42px 0px 42px;
+        border: 2px solid #00DA7B;
+        background: #FFF;
+        box-shadow: 0px 1px 17.7px 0px rgba(0, 218, 123, 0.22);
+      }
+    }
+  }
+  .image {
+
+    position: relative;
+    margin-bottom: 48px;
+    @media screen and (max-width: 576px){
+      margin-bottom: 32px;
+    }
+
+    div {
+      position: absolute;
+      bottom: -25px;
+
+      /* Sabit left:90px əvəzinə: */
+      left: 50%;
+      transform: translateX(-50%);
+
+      width: 74px;
+      height: 74px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      border-radius: 42px 42px 0px 42px;
+      border: 1px solid #EEE;
+      background: #FFF;
+      box-shadow: 0px 1px 3.1px 0px rgba(151, 151, 151, 0.22);
+      transition: all 0.3s ease-in-out;
+
+      img {
+        width: 36px;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+      }
+      @media screen and (max-width: 576px){
+        width: 60px;
+        height: 60px;
+        img{
+          width: 33px;
+        }
+      }
+    }
+
+    img {
+      width: 100%;
+      object-fit: cover;
+      aspect-ratio: 1/.6;
+    }
+  }
+  .content{
+    text-align: center;
+    h4{
+      color: #1F1F1F;
+      text-align: center;
+      font-size: 18px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: normal;
+      margin-bottom: 8px;
+      @media screen and (max-width: 576px){
+        font-size: 14px;
+      }
+
+    }
+    p{
+      color: #686868;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 500;
+      line-height: 21px; /* 175% */
+      margin-bottom: 8px;
+      @media screen and (max-width: 576px){
+        display: none;
+      }
+    }
+    div{
+
+      button{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+        background: none;
+        color: #00DA7B;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 500;
+        line-height: 30px; /* 214.286% */
+        margin: auto;
+        @media screen and (max-width: 576px){
+          font-size: 12px;
+          line-height: 18.207px; /* 151.724% */
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,70 @@
+#doktorCard{
+  border-top-left-radius: 146px;
+  border-top-right-radius: 146px;
+  border: 1px solid #E8E8E8;
+  padding: 33px 46px;
+  overflow: hidden;
+  cursor: pointer;
+  @media screen and (max-width: 576px){
+    padding: 20px 27px 0;
+  }
+  &:hover{
+    .image{
+      box-shadow: 0px 4px 33.8px 100px rgba(163, 255, 215, 0.15);
+
+    }
+  }
+  .image{
+    border-radius: 50%;
+    width: 100%;
+    aspect-ratio: 1/1;
+    overflow: hidden;
+    margin-bottom: 26px;
+    transition: all 1.5s ease-in-out;
+    @media screen and (max-width: 576px) {
+      margin-bottom: 10px;
+    }
+    img{
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+    }
+  }
+  .content{
+    text-align: center;
+    margin-bottom: 35px;
+    h5{
+      font-weight: 700;
+      font-size: 19px;
+      line-height: 100%;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    p{
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 100%;
+      text-align: center;
+      color: #686868;
+    }
+  @media screen and (max-width: 576px){
+    margin-bottom: 10px;
+    h5{
+      font-size: 14px;
+      line-height: normal;
+      margin-bottom: 10px;
+    }
+    p{
+      font-size: 12px;
+      line-height: normal;
+    }
+  }
+  }
+  button{
+    background: none;
+    border: none;
+    font-size: 25px;
+    color: rgba(10, 202, 133, 0.51);
+    cursor: pointer;
+  }
+}
