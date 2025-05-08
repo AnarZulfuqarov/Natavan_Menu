@@ -3,6 +3,7 @@ import './index.scss'
 import { NavLink, useLocation } from "react-router-dom";
 import {TbLogs} from "react-icons/tb";
 import {FaClinicMedical} from "react-icons/fa";
+import {IoFastFoodOutline} from "react-icons/io5";
 
 function AdminLeftBar() {
     const location = useLocation();
@@ -16,10 +17,10 @@ function AdminLeftBar() {
                     Kateqoriya
                 </NavLink>
             </li>
-            <li className={location.pathname === "/admin/clinic" ? "selected" : ""}>
-                <FaClinicMedical className="icon" />
-                <NavLink to="/admin/clinic">
-                    Xəstəxana
+            <li className={location.pathname === "/admin/food" ? "selected" : ""}>
+                <IoFastFoodOutline className="icon" />
+                <NavLink to="/admin/food">
+                    Yemekler
                 </NavLink>
             </li>
 

@@ -4,9 +4,9 @@ import Cookies from "js-cookie";
 export const userApi = createApi({
     reducerPath: 'userApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://klinikenalianz-001-site1.ltempurl.com/api',
+        baseUrl: 'https://natavanmenu-001-site1.ltempurl.com/api',
         prepareHeaders: (headers) => {
-            const token = Cookies.get('klinikenToken');
+            const token = Cookies.get('natavanToken');
             if (token) {
                 headers.set('Authorization', `Bearer ${token}`);
             }
@@ -16,7 +16,7 @@ export const userApi = createApi({
     endpoints: (builder) => ({
         postAdminLogin: builder.mutation({
             query: (admin) => ({
-                url: `/Admin/login`,
+                url: `/Admins/login`,
                 method: 'POST',
                 body: admin,
                 headers: {'Content-Type': 'application/json'}
@@ -24,166 +24,78 @@ export const userApi = createApi({
         }),
         getAllCategory: builder.query({
             query: () => ({
-                url: `/Category/get-all-categories`,
+                url: `/Categorys`,
             }),
         }),
-        getCategoryById: builder.query({
+        getCategorysById: builder.query({
             query: (id) => ({
-                url: `/Category/get-category-by-id/${id}`,
+                url: `/Categorys/${id}`,
             }),
         }),
-        putCategory: builder.mutation({
+        putCategorys: builder.mutation({
             query: (category) => ({
-                url: `/Category/update-category`,
+                url: `/Categorys`,
                 method: 'PUT',
                 body: category,
             }),
         }),
-        postCategory: builder.mutation({
+        postCategorys: builder.mutation({
             query: (data) => ({
-                url: `/Category/create-category`,
+                url: `/Categorys`,
                 method: 'POST',
                 body: data,
             }),
         }),
-        deleteCategory: builder.mutation({
+        deleteCategorys: builder.mutation({
             query: (id) => ({
-                url: `/Category/delete-category/${id}`,
+                url: `/Categorys/?id=${id}`,
                 method: 'DELETE',
             }),
         }),
-        getAllClinic: builder.query({
+        getAllProducts: builder.query({
             query: () => ({
-                url: `/Clinic/get-all-clinics`,
+                url: `/Products`,
             }),
         }),
-        getClinicById: builder.query({
-            query: (id) => ({
-                url: `/Clinic/get-clinic-by-id/${id}`,
-            }),
-        }),
-        putClinic: builder.mutation({
+
+        putProducts: builder.mutation({
             query: (clinic) => ({
-                url: `/Clinic/update-clinic`,
+                url: `/Products`,
                 method: 'PUT',
                 body: clinic,
-            }),
-        }),
-        postClinic: builder.mutation({
-            query: (data) => ({
-                url: `/Clinic/create-clinic`,
-                method: 'POST',
-                body: data,
-            }),
-        }),
-        deleteClinic: builder.mutation({
-            query: (id) => ({
-                url: `/Clinic/delete-clinic/${id}`,
-                method: 'DELETE',
-            }),
-        }),
-        getAllDoctors: builder.query({
-            query: () => ({
-                url: `/Doctors/get-all-doctors`,
-            }),
-        }),
-        getDoctorsById: builder.query({
-            query: (id) => ({
-                url: `/Doctors/get-doctor-by-id/${id}`,
-            }),
-        }),
-        putDoctors: builder.mutation({
-            query: (doctor) => ({
-                url: `/Doctors/update-doctor`,
-                method: 'PUT',
-                body: doctor,
-            }),
-        }),
-        postDoctors: builder.mutation({
-            query: (data) => ({
-                url: `/Doctors/create-doctor`,
-                method: 'POST',
-                body: data,
-            }),
-        }),
-        deleteDoctors: builder.mutation({
-            query: (id) => ({
-                url: `/Doctors/delete-doctor/${id}`,
-                method: 'DELETE',
-            }),
-        }),
-        getAllService: builder.query({
-            query: () => ({
-                url: `/Service/get-all-services`,
-            }),
-        }),
-        getServiceById: builder.query({
-            query: (id) => ({
-                url: `/Service/get-service-by-id/${id}`,
-            }),
-        }),
-        putService: builder.mutation({
-            query: (service) => ({
-                url: `/Service/update-service`,
-                method: 'PUT',
-                body: service,
-            }),
-        }),
-        postService: builder.mutation({
-            query: (data) => ({
-                url: `/Service/create-service`,
-                method: 'POST',
-                body: data,
-            }),
-        }),
-        deleteService: builder.mutation({
-            query: (id) => ({
-                url: `/Service/delete-service/${id}`,
-                method: 'DELETE',
-            }),
-        }),
-        postContact: builder.mutation({
-            query: (contact) => ({
-                url: `/Contact/create-contact`,
-                method: 'POST',
-                body: contact,
                 headers: {'Content-Type': 'application/json'}
             }),
         }),
-        getAllContact: builder.query({
-            query: () => ({
-                url: `/Contact/get-all-contacts`,
+        postProducts: builder.mutation({
+            query: (data) => ({
+                url: `/Products`,
+                method: 'POST',
+                body: data,
+                headers: {'Content-Type': 'application/json'}
             }),
         }),
+        deleteProducts: builder.mutation({
+            query: (id) => ({
+                url: `/Products/?id=${id}`,
+                method: 'DELETE',
+            }),
+        }),
+
     }),
 })
 export const {
     usePostAdminLoginMutation,
 
     useGetAllCategoryQuery,
-    useGetCategoryByIdQuery,
-    usePutCategoryMutation,
-    useDeleteCategoryMutation,
-    usePostCategoryMutation,
+    usePutCategorysMutation,
+    useDeleteCategorysMutation,
+    usePostCategorysMutation,
+    useGetCategorysByIdQuery,
 
-    useGetAllClinicQuery,
-    useGetClinicByIdQuery,
-    usePutClinicMutation,
-    useDeleteClinicMutation,
-    usePostClinicMutation,
+    useGetAllProductsQuery,
+    usePutProductsMutation,
+    useDeleteProductsMutation,
+    usePostProductsMutation,
 
-    useGetAllDoctorsQuery,
-    useGetDoctorsByIdQuery,
-    usePutDoctorsMutation,
-    useDeleteDoctorsMutation,
-    usePostDoctorsMutation,
 
-    useGetAllServiceQuery,
-    useGetServiceByIdQuery,
-    usePutServiceMutation,
-    useDeleteServiceMutation,
-    usePostServiceMutation,
-
-    usePostContactMutation,
-    useGetAllContactQuery,
 } = userApi

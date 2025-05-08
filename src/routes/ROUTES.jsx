@@ -1,7 +1,12 @@
 import MainPage from "../pages/index.jsx";
 import AdminPage from "../components/AdminComponents/AdminPage/index.jsx";
-import AdminContact from "../pages/AdminPages/AdminContact/index.jsx";
-import AdminCategory from "../pages/AdminPages/AdminDoktor/index.jsx";
+import AdminCategory from "../pages/AdminPages/AdminCategory/index.jsx";
+import AdminFood from "../pages/AdminPages/AdminFood/index.jsx";
+import LoadingPage from "../pages/UserPages/LoadingPage/index.jsx";
+import CategoryPage from "../pages/UserPages/CategoryPage/index.jsx";
+import MenuPage from "../pages/UserPages/MenuPage/index.jsx";
+import AdminLogin from "../pages/AdminPages/AdminLogin/index.jsx";
+import ProtectedRoute from "../ProtectedRoute.jsx";
 
 
 const router = [
@@ -11,21 +16,24 @@ const router = [
         children: [
             {
                 path: "/",
+                element: <LoadingPage/>
             },
             {
-                path: "/contact",
+                path: "/category",
+                element: <CategoryPage/>
             },
             {
-                path: "/portfolio",
+                path: "/menu/:id",
+                element: <MenuPage/>
             }
         ]
     },
     {
         path: "/admin",
         element: (
-            // <ProtectedRoute>
+            <ProtectedRoute>
                 <AdminPage/>
-            // </ProtectedRoute>
+            </ProtectedRoute>
         ),
         children: [
 
@@ -35,14 +43,14 @@ const router = [
             },
 
             {
-                path: "/admin/contact",
-                element: <AdminContact/>
+                path: "/admin/food",
+                element: <AdminFood/>
             }
         ]
     },
     {
       path: "/login",
-      // element: <AdminLogin/>
+      element: <AdminLogin/>
     }
 ];
 

@@ -1,0 +1,123 @@
+#menu-page {
+  width: 100%;
+  height: 100vh;
+  background-color: white;
+  overflow: hidden;
+  .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .header {
+    width: 100%;
+    padding: 35px 0;
+    background: #746F64;
+    position: relative;
+    h2 {
+      color: #FFF;
+      text-align: center;
+      font-family: "Playfair Display";
+      font-size: 32px;
+      font-style: normal;
+      font-weight: 500;
+      line-height: normal;
+      letter-spacing: 1.28px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    div {
+      text-align: center;
+    }
+    .back{
+      position: absolute;
+      bottom: 25px;
+      left: 65px;
+      z-index: 999999999;
+    }
+    .buta{
+      transform: rotate(60deg);
+      position: absolute;
+      right: -50px;
+      top:-100px;
+    }
+    .buta2{
+      position: absolute;
+      left: -50px;
+      top:-100px;
+    }
+  }
+  .menu-items {
+    .menu-item {
+      padding: 25px 60px;
+      border-bottom: 1px solid #ddd;
+      &.odd-item {
+        background: #E8E8DF;
+      }
+      .item-header {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-size: 18px;
+        .item-name {
+          color: #1F1B15;
+          text-align: left;
+          font-family: "Playfair Display";
+          font-size: 18px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: normal;
+          letter-spacing: 0.72px;
+          flex: 1; /* Take up remaining space */
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .price-toggle {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          width: 80px; /* Fixed width for consistent alignment */
+          justify-content: flex-end;
+        }
+        .item-price {
+          white-space: nowrap; /* Prevent price from wrapping */
+          text-align: right;
+          width: 50px; /* Fixed width for price to align vertically */
+          color: #1F1B15;
+          font-family: "Playfair Display";
+          font-size: 18px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: 27px; /* 150% */
+          letter-spacing: 0.72px;
+        }
+        .toggle-icon {
+          transition: transform 0.3s ease;
+        }
+        .toggle-icon.open {
+          transform: rotate(180deg); /* Rotate chevron when open */
+        }
+      }
+      .item-description {
+        padding: 10px 0;
+        color: #000;
+        font-family: "Playfair";
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 21px; /* 131.25% */
+        letter-spacing: 0.64px;
+      }
+    }
+  }
+  .additional-header {
+    width: 100%;
+    padding: 25px 0;
+    background: #746F64;
+    color: #FFF;
+    text-align: center;
+    font-family: "Playfair Display";
+    font-size: 24px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+}

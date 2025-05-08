@@ -8,10 +8,10 @@ import {useEffect} from "react";
 import {useTranslation} from "react-i18next";
 
 function App() {
-    const token = Cookies.get("klinikenToken");
+    const token = Cookies.get("natavanToken");
 
     if (!token) {
-        Cookies.set("klinikenToken", "null");
+        Cookies.set("natavanToken", "null");
     }
 
 
