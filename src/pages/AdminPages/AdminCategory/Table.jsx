@@ -136,9 +136,9 @@ const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
 const CategoryTable = () => {
     const { data: getAllCategory, refetch: refetchCategories } = useGetAllCategoryQuery();
     const categories = getAllCategory?.data;
-    const [postCategory] = usePostCategorysMutation();
-    const [putCategory] = usePutCategorysMutation();
-    const [deleteCategory] = useDeleteCategorysMutation();
+    const [postCategory, { isLoading: isPosting }] = usePostCategorysMutation();
+    const [putCategory, { isLoading: isPutting }] = usePutCategorysMutation();
+    const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategorysMutation();
 
     // Add Modal state
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -152,6 +152,19 @@ const CategoryTable = () => {
     const [editingRecord, setEditingRecord] = useState(null);
     const [editUploadedFile, setEditUploadedFile] = useState(null);
     const [editPreviewUrl, setEditPreviewUrl] = useState(null);
+
+    // Prepare data with subcategories
+    const dataSource = categories
+        ? categories.flatMap((category) => [
+            { ...category, isMainCategory: true },
+            ...category.subCategories.map((subCategory) => ({
+                ...subCategory,
+                isMainCategory: false,
+                parentCategoryId: category.id,
+                parentCategoryName: category.name,
+            })),
+        ])
+        : [];
 
     // Tablo sütunları
     const columns = [
@@ -169,6 +182,7 @@ const CategoryTable = () => {
                     src={CATEGORY_IMAGES + categoryImage}
                     alt="Card"
                     style={{ width: 80, height: 80, objectFit: "cover" }}
+                    onError={(e) => { e.target.src = "/src/assets/icons/placeholder.png"; }}
                 />
             ),
         },
@@ -176,6 +190,17 @@ const CategoryTable = () => {
             title: "Kateqoriya Adı (AZ)",
             dataIndex: "name",
             key: "name",
+            render: (name, record) => (
+                <span>
+                    {record.isMainCategory ? <strong>{name}</strong> : `— ${name}`}
+                </span>
+            ),
+        },
+        {
+            title: "Ana Kateqoriya",
+            dataIndex: "parentCategoryName",
+            key: "parentCategoryName",
+            render: (parentCategoryName) => parentCategoryName || "-",
         },
         {
             title: "Fəaliyyətlər",
@@ -186,21 +211,23 @@ const CategoryTable = () => {
                         icon={<EditOutlined />}
                         onClick={() => handleEdit(record)}
                         style={{ marginRight: 8 }}
+                        disabled={isDeleting}
                     />
                     <Popconfirm
                         title="Bu kateqoriyanı siləcəyinizə əminsiniz?"
                         onConfirm={() => handleDelete(record)}
                         okText="Bəli"
                         cancelText="Xeyr"
+                        disabled={isDeleting}
                     >
-                        <Button icon={<DeleteOutlined />} danger />
+                        <Button icon={<DeleteOutlined />} danger disabled={isDeleting} />
                     </Popconfirm>
                 </>
             ),
         },
     ];
 
-    // Expanded row – digər dillərdəki dəyərlər, parentCategoryId və subCategories göstərilir
+    // Expanded row – digər dillərdəki dəyərlər və products göstərilir
     const expandedRowRender = (record) => {
         return (
             <div>
@@ -214,18 +241,16 @@ const CategoryTable = () => {
                         <strong>Ad (RU):</strong> {record.nameRu}
                     </p>
                 )}
-                <div>
-                    <strong>Alt Kateqoriyalar:</strong>
-                    {record.subCategories && record.subCategories.length > 0 ? (
+                {record.products && record.products.length > 0 && (
+                    <div>
+                        <strong>Məhsullar:</strong>
                         <ul style={{ margin: 0, paddingLeft: 20 }}>
-                            {record.subCategories.map((subCategory) => (
-                                <li key={subCategory.id}>{subCategory.name}</li>
+                            {record.products.map((product) => (
+                                <li key={product.id}>{product.name}</li>
                             ))}
                         </ul>
-                    ) : (
-                        " Yoxdur"
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -430,7 +455,13 @@ const CategoryTable = () => {
     return (
         <div>
             <div style={{ marginBottom: "16px" }}>
-                <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={showModal}
+                    loading={isPosting}
+                    disabled={isPosting}
+                >
                     Yeni Kateqoriya Əlavə edin
                 </Button>
             </div>
@@ -438,8 +469,8 @@ const CategoryTable = () => {
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={categories}
-                pagination={{ pageSize: 5 }}
+                dataSource={dataSource}
+                pagination={{ pageSize: 4 }}
                 expandedRowRender={expandedRowRender}
             />
 
@@ -452,6 +483,7 @@ const CategoryTable = () => {
                 cancelText="Ləğv et"
                 okText="Əlavə Et"
                 width={800}
+                okButtonProps={{ loading: isPosting, disabled: isPosting }}
             >
                 <Form form={addForm} layout="vertical">
                     <Row gutter={16}>
@@ -543,6 +575,7 @@ const CategoryTable = () => {
                 cancelText="Ləğv et"
                 okText="Yenilə"
                 width={800}
+                okButtonProps={{ loading: isPutting, disabled: isPutting }}
             >
                 <Form form={editForm} layout="vertical">
                     <Row gutter={16}>

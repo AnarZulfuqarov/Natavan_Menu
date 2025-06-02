@@ -26,17 +26,13 @@ import {
 } from "../../../services/userApi.jsx";
 import { PRODUCT_IMAGES } from "../../../contants.js";
 
-// Add custom CSS for square image upload
-
-// Inject styles into the document
-
 const FoodTable = () => {
     const { data: getAllProducts, refetch: refetchFoods } = useGetAllProductsQuery();
     const foods = getAllProducts?.data || [];
     const { data: getAllCategory } = useGetAllCategoryQuery();
     const categories = getAllCategory?.data || [];
-    const [postFood] = usePostProductsMutation();
-    const [putFood] = usePutProductsMutation();
+    const [postFood, { isLoading: isAdding }] = usePostProductsMutation(); // Add isLoading for add mutation
+    const [putFood, { isLoading: isUpdating }] = usePutProductsMutation(); // Add isLoading for update mutation
     const [deleteFood] = useDeleteProductsMutation();
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -286,7 +282,6 @@ const FoodTable = () => {
                         <p>
                             <strong>Ad (EN):</strong> {record.nameEng || "Yoxdur"}
                         </p>
-                        покраска стен в квартире цена за квадратный метр
                         <p>
                             <strong>Ad (RU):</strong> {record.nameRu || "Yoxdur"}
                         </p>
@@ -312,17 +307,15 @@ const FoodTable = () => {
 
     // Upload props for validation
     const uploadProps = {
-
         fileList,
         onChange: handleUploadChange,
-        listType: "picture-card", // Changed to picture-card for square upload
+        listType: "picture-card",
     };
 
     const editUploadProps = {
-
         fileList: editFileList,
         onChange: handleEditUploadChange,
-        listType: "picture-card", // Changed to picture-card for square upload
+        listType: "picture-card",
     };
 
     return (
@@ -435,12 +428,11 @@ const FoodTable = () => {
                             <Form.Item
                                 name="productImage"
                                 label="Şəkil"
-                                rules={[{ required: true, message: "Şəkil yükləyin!" }]}
                             >
                                 <Upload {...uploadProps} maxCount={1}>
                                     <div>
                                         <UploadOutlined />
-                                        <div >Şəkil Yüklə</div>
+                                        <div>Şəkil Yüklə</div>
                                     </div>
                                 </Upload>
                             </Form.Item>
@@ -451,6 +443,8 @@ const FoodTable = () => {
                             type="primary"
                             htmlType="submit"
                             className="mr-2 bg-blue-500 hover:bg-blue-600 rounded-md"
+                            loading={isAdding} // Show loading indicator
+                            disabled={isAdding} // Disable button during loading
                         >
                             Əlavə Et
                         </Button>
@@ -545,12 +539,11 @@ const FoodTable = () => {
                             <Form.Item
                                 name="productImage"
                                 label="Şəkil"
-                                rules={[{ required: true, message: "Şəkil yükləyin!" }]}
                             >
                                 <Upload {...editUploadProps} maxCount={1}>
                                     <div>
                                         <UploadOutlined />
-                                        <div >Şəkil Yüklə</div>
+                                        <div>Şəkil Yüklə</div>
                                     </div>
                                 </Upload>
                             </Form.Item>
@@ -561,6 +554,8 @@ const FoodTable = () => {
                             type="primary"
                             htmlType="submit"
                             className="mr-2 bg-blue-500 hover:bg-blue-600 rounded-md"
+                            loading={isUpdating} // Show loading indicator
+                            disabled={isUpdating} // Disable button during loading
                         >
                             Düzəliş Et
                         </Button>

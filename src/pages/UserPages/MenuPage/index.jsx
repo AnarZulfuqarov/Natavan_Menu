@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import icon from '/src/assets/bac3.png';
 import { useGetCategorysByIdQuery } from '../../../services/userApi.jsx';
-import {PRODUCT_IMAGES} from "../../../contants.js";
+import { PRODUCT_IMAGES } from "../../../contants.js";
 
 function MenuPage() {
     const { id } = useParams();
@@ -107,7 +107,6 @@ function MenuPage() {
                                 aria-expanded={openAccordion === `breakfast-${index}`}
                                 aria-controls={`description-breakfast-${index}`}
                             >
-                                {/* Add Image Section */}
                                 <div className={'item-image'}>
                                     {item.productImage ? (
                                         <img src={PRODUCT_IMAGES + item.productImage} alt={item.name} />
@@ -178,11 +177,7 @@ function MenuPage() {
                 {additionalItems.length > 0 && (
                     <>
                         <div className={'additional-header'}>
-                            {language === 'az'
-                                ? 'Əlavə yeməklər'
-                                : language === 'en'
-                                    ? 'Additional Meals'
-                                    : 'Дополнительные блюда'}
+                            {getLocalizedField(datas?.subCategories[0], 'name')}
                         </div>
                         <div className={'menu-items'}>
                             {additionalItems.map((item, index) => (
@@ -197,10 +192,9 @@ function MenuPage() {
                                         aria-expanded={openAccordion === `additional-${index}`}
                                         aria-controls={`description-additional-${index}`}
                                     >
-                                        {/* Add Image Section */}
                                         <div className={'item-image'}>
                                             {item.productImage ? (
-                                                <img src={PRODUCT_IMAGES +  item.productImage} alt={item.name} />
+                                                <img src={PRODUCT_IMAGES + item.productImage} alt={item.name} />
                                             ) : (
                                                 <div className="image-placeholder"></div>
                                             )}
