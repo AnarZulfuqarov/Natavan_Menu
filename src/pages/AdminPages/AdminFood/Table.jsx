@@ -10,9 +10,13 @@ import {
     Col,
     Select,
     message,
+    Tooltip,
+    Upload,
+    Image,
 } from "antd";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
+import { UploadOutlined } from "@ant-design/icons";
 import {
     useDeleteProductsMutation,
     useGetAllCategoryQuery,
@@ -20,12 +24,17 @@ import {
     usePostProductsMutation,
     usePutProductsMutation,
 } from "../../../services/userApi.jsx";
+import { PRODUCT_IMAGES } from "../../../contants.js";
+
+// Add custom CSS for square image upload
+
+// Inject styles into the document
 
 const FoodTable = () => {
     const { data: getAllProducts, refetch: refetchFoods } = useGetAllProductsQuery();
-    const foods = getAllProducts?.data;
+    const foods = getAllProducts?.data || [];
     const { data: getAllCategory } = useGetAllCategoryQuery();
-    const categories = getAllCategory?.data;
+    const categories = getAllCategory?.data || [];
     const [postFood] = usePostProductsMutation();
     const [putFood] = usePutProductsMutation();
     const [deleteFood] = useDeleteProductsMutation();
@@ -34,30 +43,37 @@ const FoodTable = () => {
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
     const [editingFood, setEditingFood] = useState(null);
+    const [fileList, setFileList] = useState([]);
+    const [editFileList, setEditFileList] = useState([]);
 
-    // Helper function to generate category and subcategory options
+    // Helper function to generate category and subcategory options with OptGroup
     const getCategoryOptions = () => {
-        const options = [];
-        categories?.forEach((category) => {
-            // Add main category
-            options.push({
-                value: category.id,
-                label: category.name,
-            });
-            // Add subcategories
-            category.subCategories?.forEach((subCategory) => {
-                options.push({
+        return categories.map((category) => ({
+            label: category.name,
+            options: [
+                {
+                    value: category.id,
+                    label: (
+                        <Tooltip title={`Ana Kategori: ${category.name}`}>
+                            <span className="font-semibold">{category.name}</span>
+                        </Tooltip>
+                    ),
+                },
+                ...(category.subCategories?.map((subCategory) => ({
                     value: subCategory.id,
-                    label: `${category.name} > ${subCategory.name}`,
-                });
-            });
-        });
-        return options;
+                    label: (
+                        <Tooltip title={`Alt Kategori: ${category.name} > ${subCategory.name}`}>
+                            <span className="ml-4 italic">{subCategory.name}</span>
+                        </Tooltip>
+                    ),
+                })) || []),
+            ],
+        }));
     };
 
     // Helper function to get category or subcategory name by ID
     const getCategoryName = (categoryId) => {
-        for (const category of categories || []) {
+        for (const category of categories) {
             if (category.id === categoryId) {
                 return category.name;
             }
@@ -70,9 +86,25 @@ const FoodTable = () => {
         return "Bilinməyən Kateqoriya";
     };
 
+    // Custom filter for Select search
+    const filterOption = (input, option) => {
+        const label = option?.label?.props?.children?.props?.children || option?.label || "";
+        return label.toLowerCase().includes(input.toLowerCase());
+    };
+
+    // Image upload handler
+    const handleUploadChange = ({ fileList }) => {
+        setFileList(fileList.slice(-1)); // Keep only the latest file
+    };
+
+    const handleEditUploadChange = ({ fileList }) => {
+        setEditFileList(fileList.slice(-1)); // Keep only the latest file
+    };
+
     // Modal handlers
     const showAddModal = () => {
         form.resetFields();
+        setFileList([]);
         setIsAddModalVisible(true);
     };
 
@@ -88,17 +120,24 @@ const FoodTable = () => {
             price: record.price,
             categoryId: record.categoryId,
         });
+        setEditFileList(
+            record.productImage
+                ? [{ uid: "-1", name: "image", status: "done", url: PRODUCT_IMAGES + record.productImage }]
+                : []
+        );
         setIsEditModalVisible(true);
     };
 
     const handleAddCancel = () => {
         setIsAddModalVisible(false);
         form.resetFields();
+        setFileList([]);
     };
 
     const handleEditCancel = () => {
         setIsEditModalVisible(false);
         editForm.resetFields();
+        setEditFileList([]);
         setEditingFood(null);
     };
 
@@ -106,22 +145,25 @@ const FoodTable = () => {
     const handleAddFood = async (values) => {
         const { name, nameEng, nameRu, description, descriptionEng, descriptionRu, price, categoryId } = values;
 
-        const payload = {
-            name,
-            nameEng,
-            nameRu,
-            description,
-            descriptionEng,
-            descriptionRu,
-            price: parseFloat(price),
-            categoryId,
-        };
+        const payload = new FormData();
+        payload.append("name", name);
+        payload.append("nameEng", nameEng);
+        payload.append("nameRu", nameRu);
+        payload.append("description", description || "");
+        payload.append("descriptionEng", descriptionEng || "");
+        payload.append("descriptionRu", descriptionRu || "");
+        payload.append("price", parseFloat(price));
+        payload.append("categoryId", categoryId);
+        if (fileList[0]?.originFileObj) {
+            payload.append("productImage", fileList[0].originFileObj);
+        }
 
         try {
             await postFood(payload).unwrap();
             message.success("Yemək uğurla əlavə edildi!");
             setIsAddModalVisible(false);
             form.resetFields();
+            setFileList([]);
             refetchFoods();
         } catch (error) {
             console.error("Error adding food:", error);
@@ -132,23 +174,26 @@ const FoodTable = () => {
     const handleEditFood = async (values) => {
         const { name, nameEng, nameRu, description, descriptionEng, descriptionRu, price, categoryId } = values;
 
-        const payload = {
-            id: editingFood.id,
-            name,
-            nameEng,
-            nameRu,
-            description,
-            descriptionEng,
-            descriptionRu,
-            price: parseFloat(price),
-            categoryId,
-        };
+        const payload = new FormData();
+        payload.append("id", editingFood.id);
+        payload.append("name", name);
+        payload.append("nameEng", nameEng);
+        payload.append("nameRu", nameRu);
+        payload.append("description", description || "");
+        payload.append("descriptionEng", descriptionEng || "");
+        payload.append("descriptionRu", descriptionRu || "");
+        payload.append("price", parseFloat(price));
+        payload.append("categoryId", categoryId);
+        if (editFileList[0]?.originFileObj) {
+            payload.append("productImage", editFileList[0].originFileObj);
+        }
 
         try {
             await putFood(payload).unwrap();
             message.success("Yemək uğurla yeniləndi!");
             setIsEditModalVisible(false);
             editForm.resetFields();
+            setEditFileList([]);
             setEditingFood(null);
             refetchFoods();
         } catch (error) {
@@ -174,6 +219,23 @@ const FoodTable = () => {
             dataIndex: "id",
             key: "id",
             render: (text, record, index) => <div>{index + 1}</div>,
+        },
+        {
+            title: "Şəkil",
+            dataIndex: "productImage",
+            key: "productImage",
+            render: (productImage) =>
+                productImage ? (
+                    <Image
+                        src={PRODUCT_IMAGES + productImage}
+                        alt="Food"
+                        width={50}
+                        height={50}
+                        className="object-cover rounded"
+                    />
+                ) : (
+                    "Şəkil yoxdur"
+                ),
         },
         {
             title: "Ad",
@@ -222,21 +284,22 @@ const FoodTable = () => {
                 <Row gutter={16}>
                     <Col span={12}>
                         <p>
-                            <strong>Ad (EN):</strong> {record.nameEng}
+                            <strong>Ad (EN):</strong> {record.nameEng || "Yoxdur"}
+                        </p>
+                        покраска стен в квартире цена за квадратный метр
+                        <p>
+                            <strong>Ad (RU):</strong> {record.nameRu || "Yoxdur"}
                         </p>
                         <p>
-                            <strong>Ad (RU):</strong> {record.nameRu}
-                        </p>
-                        <p>
-                            <strong>Təsvir (AZ):</strong> {record.description}
+                            <strong>Təsvir (AZ):</strong> {record.description || "Yoxdur"}
                         </p>
                     </Col>
                     <Col span={12}>
                         <p>
-                            <strong>Təsvir (EN):</strong> {record.descriptionEng}
+                            <strong>Təsvir (EN):</strong> {record.descriptionEng || "Yoxdur"}
                         </p>
                         <p>
-                            <strong>Təsvir (RU):</strong> {record.descriptionRu}
+                            <strong>Təsvir (RU):</strong> {record.descriptionRu || "Yoxdur"}
                         </p>
                         <p>
                             <strong>Kateqoriya:</strong> {getCategoryName(record.categoryId)}
@@ -245,6 +308,21 @@ const FoodTable = () => {
                 </Row>
             </div>
         );
+    };
+
+    // Upload props for validation
+    const uploadProps = {
+
+        fileList,
+        onChange: handleUploadChange,
+        listType: "picture-card", // Changed to picture-card for square upload
+    };
+
+    const editUploadProps = {
+
+        fileList: editFileList,
+        onChange: handleEditUploadChange,
+        listType: "picture-card", // Changed to picture-card for square upload
     };
 
     return (
@@ -268,7 +346,8 @@ const FoodTable = () => {
                         !!record.nameRu ||
                         !!record.description ||
                         !!record.descriptionEng ||
-                        !!record.descriptionRu,
+                        !!record.descriptionRu ||
+                        !!record.productImage,
                 }}
             />
 
@@ -319,33 +398,21 @@ const FoodTable = () => {
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item
-                                name="description"
-                                label="Təsvir (AZ)"
-                                rules={[{ required: true, message: "Təsvir daxil edin!" }]}
-                            >
+                            <Form.Item name="description" label="Təsvir (AZ)">
                                 <Input.TextArea
                                     placeholder="Təsvir daxil edin"
                                     className="rounded-md"
                                     rows={4}
                                 />
                             </Form.Item>
-                            <Form.Item
-                                name="descriptionEng"
-                                label="Təsvir (EN)"
-                                rules={[{ required: true, message: "Təsvir daxil edin!" }]}
-                            >
+                            <Form.Item name="descriptionEng" label="Təsvir (EN)">
                                 <Input.TextArea
                                     placeholder="Təsvir daxil edin (EN)"
                                     className="rounded-md"
                                     rows={4}
                                 />
                             </Form.Item>
-                            <Form.Item
-                                name="descriptionRu"
-                                label="Təsvir (RU)"
-                                rules={[{ required: true, message: "Təsvir daxil edin!" }]}
-                            >
+                            <Form.Item name="descriptionRu" label="Təsvir (RU)">
                                 <Input.TextArea
                                     placeholder="Təsvir daxil edin (RU)"
                                     className="rounded-md"
@@ -360,8 +427,22 @@ const FoodTable = () => {
                                 <Select
                                     placeholder="Kateqoriya seçin"
                                     className="rounded-md"
+                                    showSearch
+                                    filterOption={filterOption}
                                     options={getCategoryOptions()}
                                 />
+                            </Form.Item>
+                            <Form.Item
+                                name="productImage"
+                                label="Şəkil"
+                                rules={[{ required: true, message: "Şəkil yükləyin!" }]}
+                            >
+                                <Upload {...uploadProps} maxCount={1}>
+                                    <div>
+                                        <UploadOutlined />
+                                        <div >Şəkil Yüklə</div>
+                                    </div>
+                                </Upload>
                             </Form.Item>
                         </Col>
                     </Row>
@@ -427,33 +508,21 @@ const FoodTable = () => {
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item
-                                name="description"
-                                label="Təsvir (AZ)"
-                                rules={[{ required: true, message: "Təsvir daxil edin!" }]}
-                            >
+                            <Form.Item name="description" label="Təsvir (AZ)">
                                 <Input.TextArea
                                     placeholder="Təsvir daxil edin"
                                     className="rounded-md"
                                     rows={4}
                                 />
                             </Form.Item>
-                            <Form.Item
-                                name="descriptionEng"
-                                label="Təsvir (EN)"
-                                rules={[{ required: true, message: "Təsvir daxil edin!" }]}
-                            >
+                            <Form.Item name="descriptionEng" label="Təsvir (EN)">
                                 <Input.TextArea
                                     placeholder="Təsvir daxil edin (EN)"
                                     className="rounded-md"
                                     rows={4}
                                 />
                             </Form.Item>
-                            <Form.Item
-                                name="descriptionRu"
-                                label="Təsvir (RU)"
-                                rules={[{ required: true, message: "Təsvir daxil edin!" }]}
-                            >
+                            <Form.Item name="descriptionRu" label="Təsvir (RU)">
                                 <Input.TextArea
                                     placeholder="Təsvir daxil edin (RU)"
                                     className="rounded-md"
@@ -468,8 +537,22 @@ const FoodTable = () => {
                                 <Select
                                     placeholder="Kateqoriya seçin"
                                     className="rounded-md"
+                                    showSearch
+                                    filterOption={filterOption}
                                     options={getCategoryOptions()}
                                 />
+                            </Form.Item>
+                            <Form.Item
+                                name="productImage"
+                                label="Şəkil"
+                                rules={[{ required: true, message: "Şəkil yükləyin!" }]}
+                            >
+                                <Upload {...editUploadProps} maxCount={1}>
+                                    <div>
+                                        <UploadOutlined />
+                                        <div >Şəkil Yüklə</div>
+                                    </div>
+                                </Upload>
                             </Form.Item>
                         </Col>
                     </Row>

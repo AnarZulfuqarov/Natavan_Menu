@@ -1,5 +1,5 @@
 import './index.scss'
-// import logo from "../../../assets/Logo.png"
+import logo from "../../../assets/LogoNatavan.png"
 import { NavLink, useLocation } from "react-router-dom";
 import {TbLogs} from "react-icons/tb";
 import {FaClinicMedical} from "react-icons/fa";
@@ -10,7 +10,7 @@ function AdminLeftBar() {
 
     return (
         <section id="adminLeftBar">
-            {/*<img src={logo} alt="logo" />*/}
+            <img src={logo} alt="logo" />
             <li className={location.pathname === "/admin/category" ? "selected" : ""}>
                 <TbLogs className="icon" />
                 <NavLink to="/admin/category">

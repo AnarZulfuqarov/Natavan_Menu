@@ -4,7 +4,7 @@ import Cookies from "js-cookie";
 export const userApi = createApi({
     reducerPath: 'userApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://natavanmenu-001-site1.ltempurl.com/api',
+        baseUrl: 'https://api.qalahotels.az/api',
         prepareHeaders: (headers) => {
             const token = Cookies.get('natavanToken');
             if (token) {
@@ -63,7 +63,6 @@ export const userApi = createApi({
                 url: `/Products`,
                 method: 'PUT',
                 body: clinic,
-                headers: {'Content-Type': 'application/json'}
             }),
         }),
         postProducts: builder.mutation({
@@ -71,7 +70,6 @@ export const userApi = createApi({
                 url: `/Products`,
                 method: 'POST',
                 body: data,
-                headers: {'Content-Type': 'application/json'}
             }),
         }),
         deleteProducts: builder.mutation({

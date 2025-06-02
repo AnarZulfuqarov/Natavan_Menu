@@ -89,6 +89,10 @@
         line-height: 24px;
         cursor: pointer;
         text-align: center;
+        min-width: 250px;
+        @media screen and (max-width: 576px) {
+          font-size: 16px;
+        }
       }
     }
 
@@ -96,14 +100,15 @@
       color: #fff;
       text-align: center;
 
+
       div {
         display: flex;
         justify-content: center;
         gap: 8px;
         color: #fff;
-        font-family: "Playfair Display", sans-serif;
+        font-family: "Times New Roman", sans-serif;
         font-size: 18px;
-        font-weight: 800;
+        font-weight: 500;
         margin-bottom: 16px;
       }
 
@@ -113,6 +118,99 @@
         font-size: 16px;
         font-weight: 700;
         line-height: 24px;
+        @media screen and (max-width: 576px) {
+          width: 100%;
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+/* Mobile Devices (≤768px) */
+@media screen and (max-width: 768px) {
+  #loading-page {
+    padding: 40px 0 20px; /* Reduced padding for mobile */
+  }
+
+  .container {
+    padding: 0 12px; /* Small side padding */
+  }
+
+  .loading-page {
+    min-height: 80vh; /* Slightly reduced for mobile */
+
+    .icon {
+      height: 100px; /* Smaller icon for mobile */
+    }
+
+    .language {
+
+      div {
+        padding: 10px 40px; /* Scaled-down padding */
+        font-size: 16px; /* Smaller font */
+        line-height: 20px;
+        margin-bottom: 12px;
+        max-width: 90%; /* Prevent overflow */
+        margin: 0 auto;
+
+      }
+    }
+
+    .contact {
+
+      div {
+        font-size: 14px; /* Smaller font */
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      p {
+        margin: 0 auto;
+        font-size: 14px;
+        line-height: 20px;
+        max-width: 90%; /* Prevent text overflow */
+      }
+    }
+  }
+}
+
+/* Desktop Devices (>1024px) */
+@media screen and (min-width: 1025px) {
+  #loading-page {
+    padding: 80px 0 48px; /* Slightly increased for larger screens */
+  }
+
+  .container {
+    max-width: 1200px; /* Cap width for large screens */
+    margin: 0 auto; /* Center container */
+    padding: 0 24px; /* Larger side padding */
+  }
+
+  .loading-page {
+    .icon {
+      height: 180px; /* Slightly larger icon */
+    }
+
+    .language {
+      div {
+        padding: 16px 80px; /* Slightly larger padding */
+        font-size: 22px; /* Slightly larger font */
+        line-height: 26px;
+        margin-bottom: 20px;
+      }
+    }
+
+    .contact {
+      div {
+        font-size: 20px; /* Slightly larger font */
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      p {
+        font-size: 18px;
+        line-height: 26px;
       }
     }
   }

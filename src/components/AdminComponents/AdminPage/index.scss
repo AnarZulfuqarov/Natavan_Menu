@@ -1,6 +1,6 @@
 #adminPage {
   display: flex;
-  background-color: rgba(250, 250, 250, 0.48);
+  background-color: rgb(243, 243, 243);
 
   .adminRightBar {
     width: 100%;
@@ -24,11 +24,15 @@
         border: none;
         background-color: #1677ff;
         color: #fff;
-        padding: 5px 10px;
+        padding:8px;
         font-size: 16px;
         font-weight: 600;
         border-radius: 10px;
         transition:all 0.5s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        //height: 30px;
         &:hover{
           opacity: 0.8;
         }

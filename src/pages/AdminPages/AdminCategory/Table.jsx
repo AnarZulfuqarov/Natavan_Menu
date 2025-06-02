@@ -9,11 +9,14 @@ import {
     Row,
     Col,
     Select,
+    Upload,
+    Image,
 } from "antd";
 import {
     EditOutlined,
     DeleteOutlined,
     PlusOutlined,
+    UploadOutlined,
 } from "@ant-design/icons";
 import {
     usePostCategorysMutation,
@@ -22,16 +25,26 @@ import {
     useGetAllCategoryQuery,
 } from "../../../services/userApi.jsx";
 import { CATEGORY_IMAGES } from "../../../contants.js";
-import icon1 from "/src/assets/icon.png";
-import icon2 from "/src/assets/icon.png";
-import icon3 from "/src/assets/icon.png";
-import icon4 from "/src/assets/icon.png";
-import icon5 from "/src/assets/icon.png";
-import icon6 from "/src/assets/icon.png";
-import icon7 from "/src/assets/icon.png";
-import icon8 from "/src/assets/icon.png";
-import icon9 from "/src/assets/icon.png";
-import icon10 from "/src/assets/icon.png";
+import icon1 from "/src/assets/icons/icon.png";
+import icon2 from "/src/assets/icons/2.png";
+import icon3 from "/src/assets/icons/3.png";
+import icon4 from "/src/assets/icons/4.png";
+import icon5 from "/src/assets/icons/5.png";
+import icon6 from "/src/assets/icons/6.png";
+import icon7 from "/src/assets/icons/7.png";
+import icon8 from "/src/assets/icons/8.png";
+import icon9 from "/src/assets/icons/9.png";
+import icon10 from "/src/assets/icons/10.png";
+import icon11 from "/src/assets/icons/11.png";
+import icon12 from "/src/assets/icons/12.png";
+import icon13 from "/src/assets/icons/12.png";
+import icon14 from "/src/assets/icons/13.png";
+import icon15 from "/src/assets/icons/14.png";
+import icon16 from "/src/assets/icons/15.png";
+import icon17 from "/src/assets/icons/16.png";
+import icon18 from "/src/assets/icons/17.png";
+import icon19 from "/src/assets/icons/18.png";
+import icon20 from "/src/assets/icons/19.png";
 import showToast from "../../../components/ToastMessage.js";
 
 // Sabit resim listesi
@@ -46,6 +59,16 @@ const availableImages = [
     { name: "8.png", src: icon8 },
     { name: "9.png", src: icon9 },
     { name: "10.png", src: icon10 },
+    { name: "11.png", src: icon11 },
+    { name: "12.png", src: icon12 },
+    { name: "13.png", src: icon13 },
+    { name: "14.png", src: icon14 },
+    { name: "15.png", src: icon15 },
+    { name: "16.png", src: icon16 },
+    { name: "17.png", src: icon17 },
+    { name: "18.png", src: icon18 },
+    { name: "19.png", src: icon19 },
+    { name: "20.png", src: icon20 },
 ];
 
 // Köməkçi funksiya: verilmiş URL-dən File obyektinə çevirir
@@ -56,9 +79,11 @@ const convertImageToFile = async (imgSrc, fileName) => {
 };
 
 // ImagePickerGalleryAlternative komponenti
-const ImagePickerGalleryAlternative = ({ value, onChange }) => {
+const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
     const handleClick = (imgName) => {
-        onChange(imgName);
+        if (!disabled) {
+            onChange(imgName);
+        }
     };
 
     return (
@@ -71,6 +96,8 @@ const ImagePickerGalleryAlternative = ({ value, onChange }) => {
                 maxHeight: "250px",
                 overflowY: "auto",
                 padding: "5px",
+                opacity: disabled ? 0.5 : 1,
+                pointerEvents: disabled ? "none" : "auto",
             }}
         >
             {availableImages.map((imgObj) => (
@@ -83,7 +110,7 @@ const ImagePickerGalleryAlternative = ({ value, onChange }) => {
                         height: "100px",
                         border: value === imgObj.name ? "2px solid #1890ff" : "1px solid #ccc",
                         borderRadius: "4px",
-                        cursor: "pointer",
+                        cursor: disabled ? "not-allowed" : "pointer",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
@@ -116,11 +143,15 @@ const CategoryTable = () => {
     // Add Modal state
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [addForm] = Form.useForm();
+    const [addUploadedFile, setAddUploadedFile] = useState(null);
+    const [addPreviewUrl, setAddPreviewUrl] = useState(null);
 
     // Edit Modal state
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editForm] = Form.useForm();
     const [editingRecord, setEditingRecord] = useState(null);
+    const [editUploadedFile, setEditUploadedFile] = useState(null);
+    const [editPreviewUrl, setEditPreviewUrl] = useState(null);
 
     // Tablo sütunları
     const columns = [
@@ -183,7 +214,6 @@ const CategoryTable = () => {
                         <strong>Ad (RU):</strong> {record.nameRu}
                     </p>
                 )}
-
                 <div>
                     <strong>Alt Kateqoriyalar:</strong>
                     {record.subCategories && record.subCategories.length > 0 ? (
@@ -223,6 +253,8 @@ const CategoryTable = () => {
             categoryImage: record.categoryImage,
             parentCategoryId: record.parentCategoryId || null,
         });
+        setEditUploadedFile(null);
+        setEditPreviewUrl(null);
         setIsEditModalVisible(true);
     };
 
@@ -234,6 +266,8 @@ const CategoryTable = () => {
     const handleCancel = () => {
         setIsModalVisible(false);
         addForm.resetFields();
+        setAddUploadedFile(null);
+        setAddPreviewUrl(null);
     };
 
     // Yeni Kateqoriya POST əməliyyatı
@@ -248,7 +282,9 @@ const CategoryTable = () => {
                         formData.append(field, values[field]);
                     }
                 });
-                if (values.categoryImage) {
+                if (addUploadedFile) {
+                    formData.append("categoryImage", addUploadedFile);
+                } else if (values.categoryImage) {
                     const imgObj = availableImages.find((item) => item.name === values.categoryImage);
                     if (imgObj) {
                         try {
@@ -256,6 +292,8 @@ const CategoryTable = () => {
                             formData.append("categoryImage", file);
                         } catch (error) {
                             console.error("Image conversion error:", error);
+                            showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
+                            return;
                         }
                     }
                 }
@@ -264,6 +302,8 @@ const CategoryTable = () => {
                     showToast("Kateqoriya uğurla əlavə edildi!", "success");
                     setIsModalVisible(false);
                     addForm.resetFields();
+                    setAddUploadedFile(null);
+                    setAddPreviewUrl(null);
                     refetchCategories();
                 } catch (error) {
                     console.error("POST Error:", error);
@@ -281,6 +321,8 @@ const CategoryTable = () => {
         setIsEditModalVisible(false);
         editForm.resetFields();
         setEditingRecord(null);
+        setEditUploadedFile(null);
+        setEditPreviewUrl(null);
     };
 
     // Edit Kateqoriya PUT əməliyyatı
@@ -298,7 +340,9 @@ const CategoryTable = () => {
                 if (editingRecord?.id) {
                     formData.append("id", editingRecord.id);
                 }
-                if (values.categoryImage) {
+                if (editUploadedFile) {
+                    formData.append("categoryImage", editUploadedFile);
+                } else if (values.categoryImage) {
                     const imgObj = availableImages.find((item) => item.name === values.categoryImage);
                     if (imgObj) {
                         try {
@@ -306,6 +350,8 @@ const CategoryTable = () => {
                             formData.append("categoryImage", file);
                         } catch (error) {
                             console.error("Image conversion error:", error);
+                            showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
+                            return;
                         }
                     }
                 }
@@ -315,6 +361,8 @@ const CategoryTable = () => {
                     setIsEditModalVisible(false);
                     editForm.resetFields();
                     setEditingRecord(null);
+                    setEditUploadedFile(null);
+                    setEditPreviewUrl(null);
                     refetchCategories();
                 } catch (error) {
                     console.error("PUT Error:", error);
@@ -325,6 +373,58 @@ const CategoryTable = () => {
             .catch((errorInfo) => {
                 console.log("Validation Failed:", errorInfo);
             });
+    };
+
+    // Upload props for Add Modal
+    const uploadPropsAdd = {
+        beforeUpload: (file) => {
+            const isImage = file.type.startsWith("image/");
+            if (!isImage) {
+                showToast("Yalnız şəkil faylları yüklənə bilər!", "error");
+                return false;
+            }
+            setAddUploadedFile(file);
+            const url = URL.createObjectURL(file);
+            setAddPreviewUrl(url);
+            addForm.setFieldsValue({ categoryImage: null }); // Clear gallery selection
+            return false; // Prevent default upload behavior
+        },
+        fileList: addUploadedFile ? [addUploadedFile] : [],
+    };
+
+    // Upload props for Edit Modal
+    const uploadPropsEdit = {
+        beforeUpload: (file) => {
+            const isImage = file.type.startsWith("image/");
+            if (!isImage) {
+                showToast("Yalnız şəkil faylları yüklənə bilər!", "error");
+                return false;
+            }
+            setEditUploadedFile(file);
+            const url = URL.createObjectURL(file);
+            setEditPreviewUrl(url);
+            editForm.setFieldsValue({ categoryImage: null }); // Clear gallery selection
+            return false; // Prevent default upload behavior
+        },
+        fileList: editUploadedFile ? [editUploadedFile] : [],
+    };
+
+    // Remove uploaded image for Add Modal
+    const handleRemoveAddImage = () => {
+        setAddUploadedFile(null);
+        setAddPreviewUrl(null);
+        if (addPreviewUrl) {
+            URL.revokeObjectURL(addPreviewUrl);
+        }
+    };
+
+    // Remove uploaded image for Edit Modal
+    const handleRemoveEditImage = () => {
+        setEditUploadedFile(null);
+        setEditPreviewUrl(null);
+        if (editPreviewUrl) {
+            URL.revokeObjectURL(editPreviewUrl);
+        }
     };
 
     return (
@@ -382,12 +482,37 @@ const CategoryTable = () => {
                             <Form.Item
                                 label="Kart Şəkli"
                                 name="categoryImage"
-                                rules={[{ required: true, message: "Şəkil seçin!" }]}
+                                rules={[{ required: !addUploadedFile, message: "Şəkil seçin və ya yükləyin!" }]}
                             >
-                                <ImagePickerGalleryAlternative
-                                    onChange={(value) => addForm.setFieldsValue({ categoryImage: value })}
-                                    value={addForm.getFieldValue("categoryImage")}
-                                />
+                                <div>
+                                    <Upload {...uploadPropsAdd} accept="image/*">
+                                        <Button icon={<UploadOutlined />}>Şəkil Yüklə</Button>
+                                    </Upload>
+                                    {addPreviewUrl && (
+                                        <div style={{ marginTop: 16 }}>
+                                            <Image
+                                                src={addPreviewUrl}
+                                                alt="Yüklənmiş Şəkil"
+                                                style={{ width: 100, height: 100, objectFit: "contain" }}
+                                            />
+                                            <Button
+                                                type="link"
+                                                danger
+                                                onClick={handleRemoveAddImage}
+                                                style={{ marginTop: 8 }}
+                                            >
+                                                Şəkli Sil
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <div style={{ marginTop: 16 }}>
+                                        <ImagePickerGalleryAlternative
+                                            onChange={(value) => addForm.setFieldsValue({ categoryImage: value })}
+                                            value={addForm.getFieldValue("categoryImage")}
+                                            disabled={!!addUploadedFile}
+                                        />
+                                    </div>
+                                </div>
                             </Form.Item>
                             <Form.Item
                                 label="Ana Kateqoriya"
@@ -448,12 +573,37 @@ const CategoryTable = () => {
                             <Form.Item
                                 label="Kart Şəkli"
                                 name="categoryImage"
-                                rules={[{ required: true, message: "Şəkil seçin!" }]}
+                                rules={[{ required: !editUploadedFile, message: "Şəkil seçin və ya yükləyin!" }]}
                             >
-                                <ImagePickerGalleryAlternative
-                                    onChange={(value) => editForm.setFieldsValue({ categoryImage: value })}
-                                    value={editForm.getFieldValue("categoryImage")}
-                                />
+                                <div>
+                                    <Upload {...uploadPropsEdit} accept="image/*">
+                                        <Button icon={<UploadOutlined />}>Şəkil Yüklə</Button>
+                                    </Upload>
+                                    {editPreviewUrl && (
+                                        <div style={{ marginTop: 16 }}>
+                                            <Image
+                                                src={editPreviewUrl}
+                                                alt="Yüklənmiş Şəkil"
+                                                style={{ width: 100, height: 100, objectFit: "contain" }}
+                                            />
+                                            <Button
+                                                type="link"
+                                                danger
+                                                onClick={handleRemoveEditImage}
+                                                style={{ marginTop: 8 }}
+                                            >
+                                                Şəkli Sil
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <div style={{ marginTop: 16 }}>
+                                        <ImagePickerGalleryAlternative
+                                            onChange={(value) => editForm.setFieldsValue({ categoryImage: value })}
+                                            value={editForm.getFieldValue("categoryImage")}
+                                            disabled={!!editUploadedFile}
+                                        />
+                                    </div>
+                                </div>
                             </Form.Item>
                             <Form.Item
                                 label="Ana Kateqoriya"

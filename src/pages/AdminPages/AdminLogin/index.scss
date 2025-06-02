@@ -1,7 +1,8 @@
 .login-panel{
+  background-color: #FFFFFF;
   position: relative;
   height: 100vh;
-  padding: 370px 0 0 ;
+  padding: 320px 0 0 ;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +28,7 @@
     top: 10px;
     left: 0;
     right: 0;
-    z-index: -1;
+    z-index: 1;
   }
 
   .login-form{
@@ -94,6 +95,7 @@
         cursor: pointer;
         margin-top: 1rem;
         transition: background-color 0.3s ease;
+        cursor: pointer;
       }
     }
   }

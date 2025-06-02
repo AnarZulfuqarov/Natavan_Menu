@@ -8,7 +8,7 @@ function AdminPage() {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        Cookies.remove('klinikenToken');
+        Cookies.remove('natavanToken');
         navigate('/');
     };
 
