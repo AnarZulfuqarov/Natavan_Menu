@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import './index.scss';
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Table,
     Button,
@@ -20,10 +21,53 @@ import {
     useGetCategorysByIdQuery,
     usePostProductsMutation,
     usePutProductsMutation,
+    usePutPoductsOrderMutation,
 } from "/src/services/userApi.jsx";
 import { PRODUCT_IMAGES } from "/src/contants.js";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { usePutPoductsOrderMutation } from "/src/services/userApi.jsx";
+import { useDrag, useDrop } from 'react-dnd';
+import update from 'immutability-helper';
+
+const ItemTypes = {
+    ROW: 'row',
+};
+
+// DraggableRow component
+const DraggableRow = ({ index, moveRow, className, style, ...restProps }) => {
+    const ref = React.useRef();
+    const [{ isOver, dropClassName }, drop] = useDrop({
+        accept: ItemTypes.ROW,
+        collect: (monitor) => {
+            const { index: dragIndex } = monitor.getItem() || {};
+            if (dragIndex === index) {
+                return {};
+            }
+            return {
+                isOver: monitor.isOver(),
+                dropClassName: dragIndex < index ? 'drop-over-downward' : 'drop-over-upward',
+            };
+        },
+        drop: (item) => {
+            moveRow(item.index, index);
+        },
+    });
+    const [{ isDragging }, drag] = useDrag({
+        type: ItemTypes.ROW,
+        item: { index },
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+    drop(drag(ref));
+
+    return (
+        <tr
+            ref={ref}
+            className={`${className} ${isOver ? dropClassName : ''}`}
+            style={{ cursor: 'move', ...style, opacity: isDragging ? 0.5 : 1 }}
+            {...restProps}
+        />
+    );
+};
 
 const AdminCategoryDetailTable = ({ id }) => {
     const { data: getAllProducts, refetch: refetchFoods } = useGetCategorysByIdQuery(id);
@@ -44,13 +88,14 @@ const AdminCategoryDetailTable = ({ id }) => {
     // Initialize products with orderId
     useEffect(() => {
         if (foods.products) {
-            setProducts(
-                foods.products.map((product, index) => ({
-                    ...product,
-                    categoryName: foods.name,
-                    orderId: product.orderId || index.toString(),
-                }))
-            );
+            const newProducts = foods.products.map((product, index) => ({
+                ...product,
+                categoryName: foods.name,
+                orderId: product.orderId || index.toString(),
+            }));
+            if (JSON.stringify(products) !== JSON.stringify(newProducts)) {
+                setProducts(newProducts);
+            }
         }
     }, [foods]);
 
@@ -111,44 +156,38 @@ const AdminCategoryDetailTable = ({ id }) => {
         setEditingFood(null);
     };
 
-    // Drag-and-drop handler
-    const onDragEnd = async (result) => {
-        if (!result.destination) return; // Dropped outside the list
-
-        const newProducts = [...products];
-        const [reorderedItem] = newProducts.splice(result.source.index, 1);
-        newProducts.splice(result.destination.index, 0, reorderedItem);
-
-        // Update orderId
-        newProducts.forEach((product, index) => {
-            product.orderId = index.toString();
-        });
-
-        setProducts(newProducts);
-
-        // Send updated order to backend
-        const payload = newProducts.map((product) => ({
-            id: product.id,
-            orderId: product.orderId,
-        }));
-
+    // Reordering handlers
+    const handleReOrder = useCallback(async (updatedProducts) => {
         try {
+            const payload = updatedProducts.map((product, index) => ({
+                id: product.id,
+                orderId: index.toString(),
+            }));
             await putProductsOrder(payload).unwrap();
             message.success("Sıralama uğurla yeniləndi!");
-            refetchFoods();
         } catch (error) {
             console.error("Error updating product order:", error);
             message.error(error?.data?.message || "Sıralama yenilənərkən xəta baş verdi!");
-            // Revert state on error
-            setProducts(
-                foods.products.map((product, index) => ({
-                    ...product,
-                    categoryName: foods.name,
-                    orderId: product.orderId || index.toString(),
-                }))
-            );
         }
-    };
+    }, [putProductsOrder]);
+
+    const moveRow = useCallback(
+        (dragIndex, hoverIndex) => {
+            const dragRow = products[dragIndex];
+            const newProducts = update(products, {
+                $splice: [
+                    [dragIndex, 1],
+                    [hoverIndex, 0, dragRow],
+                ],
+            });
+            setProducts(newProducts);
+            const timeout = setTimeout(() => {
+                handleReOrder(newProducts);
+            }, 300);
+            return () => clearTimeout(timeout);
+        },
+        [products, handleReOrder]
+    );
 
     // Form submission handlers
     const handleAddFood = async (values) => {
@@ -307,6 +346,13 @@ const AdminCategoryDetailTable = ({ id }) => {
         listType: "picture-card",
     };
 
+    // Table components for react-dnd
+    const components = {
+        body: {
+            row: DraggableRow,
+        },
+    };
+
     return (
         <div className="p-4">
             <div style={{ marginBottom: "16px" }}>
@@ -319,61 +365,17 @@ const AdminCategoryDetailTable = ({ id }) => {
                 </Button>
             </div>
 
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="products">
-                    {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                            <Table
-                                rowKey="id"
-                                columns={columns}
-                                dataSource={products}
-                                pagination={{ pageSize: 5 }}
-                                components={{
-                                    body: {
-                                        row: ({ children, ...restProps }) => {
-                                            const index = products.findIndex((p) => p.id === restProps["data-row-key"]);
-                                            return (
-                                                <Draggable
-                                                    draggableId={products[index]?.id || index.toString()}
-                                                    index={index}
-                                                    isDragDisabled={isOrdering}
-                                                >
-                                                    {(provided, snapshot) => (
-                                                        <tr
-                                                            ref={provided.innerRef}
-                                                            {...provided.draggableProps}
-                                                            {...restProps}
-                                                            style={{
-                                                                ...provided.draggableProps.style,
-                                                                background: snapshot.isDragging ? "#f0f0f0" : "inherit",
-                                                            }}
-                                                        >
-                                                            {Array.isArray(children) ? (
-                                                                children.map((child, i) =>
-                                                                    i === 0 ? (
-                                                                        <td key={child?.key || i} {...provided.dragHandleProps}>
-                                                                            {child}
-                                                                        </td>
-                                                                    ) : (
-                                                                        <td key={child?.key || i}>{child}</td>
-                                                                    )
-                                                                )
-                                                            ) : (
-                                                                <td colSpan={columns.length}>No data</td>
-                                                            )}
-                                                        </tr>
-                                                    )}
-                                                </Draggable>
-                                            );
-                                        },
-                                    },
-                                }}
-                            />
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
+            <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={products}
+                pagination={{ pageSize: 5 }}
+                components={components}
+                onRow={(record, index) => ({
+                    index,
+                    moveRow,
+                })}
+            />
 
             {/* Add Food Modal */}
             <Modal

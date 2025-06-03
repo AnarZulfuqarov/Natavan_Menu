@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import './index.scss';
+import React, { useState, useCallback, useEffect } from "react";
 import {
     Table,
     Button,
@@ -25,8 +26,8 @@ import {
     useDeleteCategorysMutation,
     useGetAllCategoryQuery,
     usePutCategorysOrderMutation,
-} from "../../../services/userApi.jsx";
-import { CATEGORY_IMAGES } from "../../../contants.js";
+} from "/src/services/userApi.jsx";
+import { CATEGORY_IMAGES } from "/src/contants.js";
 import icon1 from "/src/assets/icons/icon.png";
 import icon2 from "/src/assets/icons/2.png";
 import icon3 from "/src/assets/icons/3.png";
@@ -56,9 +57,9 @@ import icon26 from "/src/assets/icons/25.png";
 import icon27 from "/src/assets/icons/269.png";
 import showToast from "../../../components/ToastMessage.js";
 import { useNavigate } from "react-router-dom";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { useDrag, useDrop } from 'react-dnd';
+import update from 'immutability-helper';
 
-// Sabit resim listesi
 const availableImages = [
     { name: "1.png", src: icon1 },
     { name: "2.png", src: icon2 },
@@ -88,6 +89,49 @@ const availableImages = [
     { name: "26.png", src: icon26 },
     { name: "27.png", src: icon27 },
 ];
+
+// Item type for react-dnd
+const ItemTypes = {
+    ROW: 'row',
+};
+
+// DraggableRow component
+const DraggableRow = ({ index, moveRow, className, style, ...restProps }) => {
+    const ref = React.useRef();
+    const [{ isOver, dropClassName }, drop] = useDrop({
+        accept: ItemTypes.ROW,
+        collect: (monitor) => {
+            const { index: dragIndex } = monitor.getItem() || {};
+            if (dragIndex === index) {
+                return {};
+            }
+            return {
+                isOver: monitor.isOver(),
+                dropClassName: dragIndex < index ? 'drop-over-downward' : 'drop-over-upward',
+            };
+        },
+        drop: (item) => {
+            moveRow(item.index, index);
+        },
+    });
+    const [{ isDragging }, drag] = useDrag({
+        type: ItemTypes.ROW,
+        item: { index },
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+    drop(drag(ref));
+
+    return (
+        <tr
+            ref={ref}
+            className={`${className} ${isOver ? dropClassName : ''}`}
+            style={{ cursor: 'move', ...style, opacity: isDragging ? 0.5 : 1 }}
+            {...restProps}
+        />
+    );
+};
 
 // Köməkçi funksiya: verilmiş URL-dən File obyektinə çevirir
 const convertImageToFile = async (imgSrc, fileName) => {
@@ -153,7 +197,7 @@ const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
 
 const CategoryTable = () => {
     const { data: getAllCategory, refetch: refetchCategories } = useGetAllCategoryQuery();
-    const categories = getAllCategory?.data || [];
+    const [categories, setCategories] = useState([]);
     const [postCategory, { isLoading: isPosting }] = usePostCategorysMutation();
     const [putCategory, { isLoading: isPutting }] = usePutCategorysMutation();
     const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategorysMutation();
@@ -173,30 +217,53 @@ const CategoryTable = () => {
     const [editUploadedFile, setEditUploadedFile] = useState(null);
     const [editPreviewUrl, setEditPreviewUrl] = useState(null);
 
-    // Handle drag end for reordering categories
-    const handleDragEnd = async (result) => {
-        if (!result.destination) return; // Dropped outside the list
+    // Update categories only if data has changed
+    useEffect(() => {
+        if (getAllCategory?.data) {
+            if (JSON.stringify(categories) !== JSON.stringify(getAllCategory.data)) {
+                setCategories(getAllCategory.data);
+            }
+        }
+    }, [getAllCategory]);
 
-        const reorderedCategories = Array.from(categories);
-        const [movedItem] = reorderedCategories.splice(result.source.index, 1);
-        reorderedCategories.splice(result.destination.index, 0, movedItem);
-
-        // Prepare payload for backend
-        const orderPayload = reorderedCategories.map((category, index) => ({
-            id: category.id,
-            orderId: index.toString(),
-        }));
-
+    // Handle reordering
+    const handleReOrder = useCallback(async (updatedCategories) => {
         try {
+            const orderPayload = updatedCategories.map((category, index) => ({
+                id: category.id,
+                orderId: index.toString(),
+            }));
+
             await putCategorysOrder(orderPayload).unwrap();
             showToast("Kateqoriya sırası uğurla yeniləndi!", "success");
-            refetchCategories(); // Refetch to sync with backend
         } catch (error) {
             console.error("Order Update Error:", error);
             const errorMsg = error?.data?.error || "Sıra yenilənərkən xəta baş verdi!";
             showToast(errorMsg, "error");
         }
-    };
+    }, [putCategorysOrder]);
+
+    // Move row for drag-and-drop
+    const moveRow = useCallback(
+        (dragIndex, hoverIndex) => {
+            const dragRow = categories[dragIndex];
+            const newCategories = update(categories, {
+                $splice: [
+                    [dragIndex, 1],
+                    [hoverIndex, 0, dragRow],
+                ],
+            });
+
+            setCategories(newCategories);
+            // Debounce the handleReOrder call
+            const timeout = setTimeout(() => {
+                handleReOrder(newCategories);
+            }, 300);
+
+            return () => clearTimeout(timeout);
+        },
+        [categories, handleReOrder]
+    );
 
     // Handle view details
     const handleViewDetails = (record) => {
@@ -483,6 +550,13 @@ const CategoryTable = () => {
         }
     };
 
+    // Table components for react-dnd
+    const components = {
+        body: {
+            row: DraggableRow,
+        },
+    };
+
     return (
         <div>
             <div style={{ marginBottom: "16px" }}>
@@ -497,51 +571,18 @@ const CategoryTable = () => {
                 </Button>
             </div>
 
-            <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="categories">
-                    {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                            <Table
-                                rowKey="id"
-                                columns={columns}
-                                dataSource={categories}
-                                pagination={{ pageSize: 4 }}
-                                expandedRowRender={expandedRowRender}
-                                components={{
-                                    body: {
-                                        row: ({ children, ...props }) => {
-                                            const index = categories.findIndex((cat) => cat.id === props["data-row-key"]);
-                                            return (
-                                                <Draggable
-                                                    draggableId={props["data-row-key"]}
-                                                    index={index}
-                                                    isDragDisabled={isOrdering || isDeleting || isPosting || isPutting}
-                                                >
-                                                    {(provided, snapshot) => (
-                                                        <tr
-                                                            ref={provided.innerRef}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
-                                                            {...props}
-                                                            style={{
-                                                                ...props.style,
-                                                                background: snapshot.isDragging ? "#f0f0f0" : "inherit",
-                                                            }}
-                                                        >
-                                                            {children}
-                                                        </tr>
-                                                    )}
-                                                </Draggable>
-                                            );
-                                        },
-                                    },
-                                }}
-                            />
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
+            <Table
+                rowKey={(record) => record.id.toString()}
+                columns={columns}
+                dataSource={categories}
+                pagination={{ pageSize: 4 }}
+                expandedRowRender={expandedRowRender}
+                components={components}
+                onRow={(record, index) => ({
+                    index,
+                    moveRow,
+                })}
+            />
 
             {/* Yeni Kateqoriya Əlavə edin Modal */}
             <Modal
