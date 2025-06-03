@@ -369,12 +369,13 @@ const AdminCategoryDetailTable = ({ id }) => {
                 rowKey="id"
                 columns={columns}
                 dataSource={products}
-                pagination={{ pageSize: 5 }}
                 components={components}
                 onRow={(record, index) => ({
                     index,
                     moveRow,
                 })}
+                scroll={{ y: '72vh' }}
+                pagination={false}
             />
 
             {/* Add Food Modal */}

@@ -575,16 +575,17 @@ const CategoryTable = () => {
                 rowKey={(record) => record.id.toString()}
                 columns={columns}
                 dataSource={categories}
-                pagination={{ pageSize: 4 }}
                 expandedRowRender={expandedRowRender}
                 components={components}
                 onRow={(record, index) => ({
                     index,
                     moveRow,
                 })}
+                scroll={{ y: '72vh' }}
+                pagination={false}
+
             />
 
-            {/* Yeni Kateqoriya Əlavə edin Modal */}
             <Modal
                 title="Yeni Kateqoriya Əlavə edin"
                 visible={isModalVisible}
