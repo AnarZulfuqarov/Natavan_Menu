@@ -39,6 +39,14 @@ export const userApi = createApi({
                 body: category,
             }),
         }),
+        putCategorysOrder: builder.mutation({
+            query: (category) => ({
+                url: `/Categorys/replace`,
+                method: 'PUT',
+                body: category,
+                headers: {'Content-Type': 'application/json'}
+            }),
+        }),
         postCategorys: builder.mutation({
             query: (data) => ({
                 url: `/Categorys`,
@@ -65,6 +73,14 @@ export const userApi = createApi({
                 body: clinic,
             }),
         }),
+        putPoductsOrder: builder.mutation({
+            query: (product) => ({
+                url: `/Products/replace`,
+                method: 'PUT',
+                body: product,
+                headers: {'Content-Type': 'application/json'}
+            }),
+        }),
         postProducts: builder.mutation({
             query: (data) => ({
                 url: `/Products`,
@@ -89,11 +105,13 @@ export const {
     useDeleteCategorysMutation,
     usePostCategorysMutation,
     useGetCategorysByIdQuery,
+    usePutCategorysOrderMutation,
 
     useGetAllProductsQuery,
     usePutProductsMutation,
     useDeleteProductsMutation,
     usePostProductsMutation,
+    usePutPoductsOrderMutation,
 
 
 } = userApi

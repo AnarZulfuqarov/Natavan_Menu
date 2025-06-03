@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import {
     Table,
     Button,
@@ -8,7 +8,6 @@ import {
     Input,
     Row,
     Col,
-    Select,
     Upload,
     Image,
 } from "antd";
@@ -16,15 +15,13 @@ import {
     EditOutlined,
     DeleteOutlined,
     PlusOutlined,
-    UploadOutlined,
-    EyeOutlined,
+    UploadOutlined, EyeOutlined,
 } from "@ant-design/icons";
 import {
     usePostCategorysMutation,
     usePutCategorysMutation,
     useDeleteCategorysMutation,
-    useGetAllCategoryQuery,
-    usePutCategorysOrderMutation,
+     useGetCategorysByIdQuery,
 } from "../../../services/userApi.jsx";
 import { CATEGORY_IMAGES } from "../../../contants.js";
 import icon1 from "/src/assets/icons/icon.png";
@@ -55,10 +52,8 @@ import icon25 from "/src/assets/icons/24.png";
 import icon26 from "/src/assets/icons/25.png";
 import icon27 from "/src/assets/icons/269.png";
 import showToast from "../../../components/ToastMessage.js";
-import { useNavigate } from "react-router-dom";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import {useNavigate} from "react-router-dom";
 
-// Sabit resim listesi
 const availableImages = [
     { name: "1.png", src: icon1 },
     { name: "2.png", src: icon2 },
@@ -89,7 +84,6 @@ const availableImages = [
     { name: "27.png", src: icon27 },
 ];
 
-// Köməkçi funksiya: verilmiş URL-dən File obyektinə çevirir
 const convertImageToFile = async (imgSrc, fileName) => {
     const res = await fetch(imgSrc);
     const blob = await res.blob();
@@ -151,17 +145,15 @@ const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
     );
 };
 
-const CategoryTable = () => {
-    const { data: getAllCategory, refetch: refetchCategories } = useGetAllCategoryQuery();
-    const categories = getAllCategory?.data || [];
-    const [postCategory, { isLoading: isPosting }] = usePostCategorysMutation();
+const SubCategoryTable = ({id}) => {
+    const { data: getAllCategory, refetch: refetchCategories } = useGetCategorysByIdQuery(id);
+    const categories = getAllCategory?.data?.subCategories || [];
+    console.log(categories);
     const [putCategory, { isLoading: isPutting }] = usePutCategorysMutation();
     const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategorysMutation();
-    const [putCategorysOrder, { isLoading: isOrdering }] = usePutCategorysOrderMutation();
     const navigate = useNavigate();
-
     // Add Modal state
-    const [isModalVisible, setIsModalVisible] = useState(false);
+
     const [addForm] = Form.useForm();
     const [addUploadedFile, setAddUploadedFile] = useState(null);
     const [addPreviewUrl, setAddPreviewUrl] = useState(null);
@@ -173,47 +165,18 @@ const CategoryTable = () => {
     const [editUploadedFile, setEditUploadedFile] = useState(null);
     const [editPreviewUrl, setEditPreviewUrl] = useState(null);
 
-    // Handle drag end for reordering categories
-    const handleDragEnd = async (result) => {
-        if (!result.destination) return; // Dropped outside the list
+    // Prepare data with subcategories
 
-        const reorderedCategories = Array.from(categories);
-        const [movedItem] = reorderedCategories.splice(result.source.index, 1);
-        reorderedCategories.splice(result.destination.index, 0, movedItem);
 
-        // Prepare payload for backend
-        const orderPayload = reorderedCategories.map((category, index) => ({
-            id: category.id,
-            orderId: index.toString(),
-        }));
-
-        try {
-            await putCategorysOrder(orderPayload).unwrap();
-            showToast("Kateqoriya sırası uğurla yeniləndi!", "success");
-            refetchCategories(); // Refetch to sync with backend
-        } catch (error) {
-            console.error("Order Update Error:", error);
-            const errorMsg = error?.data?.error || "Sıra yenilənərkən xəta baş verdi!";
-            showToast(errorMsg, "error");
-        }
-    };
-
-    // Handle view details
     const handleViewDetails = (record) => {
-        navigate(`/admin/categories/${record.id}`);
+        navigate(`/admin/categories/${record.id}`); // Adjust the path as needed
     };
-
-    // Table columns
+    // Tablo sütunları
     const columns = [
         {
             title: "#",
             key: "index",
-            render: (text, record, index) => (
-                <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ marginRight: 8, cursor: "grab" }}>::</span>
-                    {index + 1}
-                </div>
-            ),
+            render: (text, record, index) => <div>{index + 1}</div>,
         },
         {
             title: "Şəkil",
@@ -224,9 +187,7 @@ const CategoryTable = () => {
                     src={CATEGORY_IMAGES + categoryImage}
                     alt="Card"
                     style={{ width: 80, height: 80, objectFit: "cover" }}
-                    onError={(e) => {
-                        e.target.src = "/src/assets/icons/placeholder.png";
-                    }}
+                    onError={(e) => { e.target.src = "/src/assets/icons/placeholder.png"; }}
                 />
             ),
         },
@@ -234,8 +195,13 @@ const CategoryTable = () => {
             title: "Kateqoriya Adı (AZ)",
             dataIndex: "name",
             key: "name",
-            render: (name, record) => <strong>{name}</strong>,
+            render: (name, record) => (
+                <span>
+                     <strong>{name}</strong>
+                </span>
+            ),
         },
+
         {
             title: "Fəaliyyətlər",
             key: "actions",
@@ -267,7 +233,7 @@ const CategoryTable = () => {
         },
     ];
 
-    // Expanded row render
+    // Expanded row – digər dillərdəki dəyərlər və products göstərilir
     const expandedRowRender = (record) => {
         return (
             <div>
@@ -281,11 +247,12 @@ const CategoryTable = () => {
                         <strong>Ad (RU):</strong> {record.nameRu}
                     </p>
                 )}
+
             </div>
         );
     };
 
-    // Delete operation
+    // Delete əməliyyatı
     const handleDelete = async (record) => {
         try {
             await deleteCategory(record.id).unwrap();
@@ -298,7 +265,7 @@ const CategoryTable = () => {
         }
     };
 
-    // Edit button click
+    // Edit butonuna tıklayınca
     const handleEdit = (record) => {
         setEditingRecord(record);
         editForm.setFieldsValue({
@@ -313,12 +280,11 @@ const CategoryTable = () => {
         setIsEditModalVisible(true);
     };
 
-    // Add Modal open
+    // Add Modal açmaq
     const showModal = () => {
         setIsModalVisible(true);
     };
 
-    // Add Modal cancel
     const handleCancel = () => {
         setIsModalVisible(false);
         addForm.resetFields();
@@ -326,53 +292,10 @@ const CategoryTable = () => {
         setAddPreviewUrl(null);
     };
 
-    // Add Category POST operation
-    const handlePost = () => {
-        addForm
-            .validateFields()
-            .then(async (values) => {
-                const formData = new FormData();
-                const textFields = ["name", "nameEng", "nameRu", "parentCategoryId"];
-                textFields.forEach((field) => {
-                    if (values[field]) {
-                        formData.append(field, values[field]);
-                    }
-                });
-                if (addUploadedFile) {
-                    formData.append("categoryImage", addUploadedFile);
-                } else if (values.categoryImage) {
-                    const imgObj = availableImages.find((item) => item.name === values.categoryImage);
-                    if (imgObj) {
-                        try {
-                            const file = await convertImageToFile(imgObj.src, imgObj.name);
-                            formData.append("categoryImage", file);
-                        } catch (error) {
-                            console.error("Image conversion error:", error);
-                            showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
-                            return;
-                        }
-                    }
-                }
-                try {
-                    await postCategory(formData).unwrap();
-                    showToast("Kateqoriya uğurla əlavə edildi!", "success");
-                    setIsModalVisible(false);
-                    addForm.resetFields();
-                    setAddUploadedFile(null);
-                    setAddPreviewUrl(null);
-                    refetchCategories();
-                } catch (error) {
-                    console.error("POST Error:", error);
-                    const errorMsg = error?.data?.error || "Kateqoriya əlavə edilərkən xəta baş verdi!";
-                    showToast(errorMsg, "error");
-                }
-            })
-            .catch((errorInfo) => {
-                console.log("Validation Failed:", errorInfo);
-            });
-    };
+    // Yeni Kateqoriya POST əməliyyatı
 
-    // Edit Modal cancel
+
+    // Edit Modal cancel əməliyyatı
     const handleEditCancel = () => {
         setIsEditModalVisible(false);
         editForm.resetFields();
@@ -381,7 +304,7 @@ const CategoryTable = () => {
         setEditPreviewUrl(null);
     };
 
-    // Edit Category PUT operation
+    // Edit Kateqoriya PUT əməliyyatı
     const handleEditSubmit = () => {
         editForm
             .validateFields()
@@ -432,21 +355,6 @@ const CategoryTable = () => {
     };
 
     // Upload props for Add Modal
-    const uploadPropsAdd = {
-        beforeUpload: (file) => {
-            const isImage = file.type.startsWith("image/");
-            if (!isImage) {
-                showToast("Yalnız şəkil faylları yüklənə bilər!", "error");
-                return false;
-            }
-            setAddUploadedFile(file);
-            const url = URL.createObjectURL(file);
-            setAddPreviewUrl(url);
-            addForm.setFieldsValue({ categoryImage: null });
-            return false;
-        },
-        fileList: addUploadedFile ? [addUploadedFile] : [],
-    };
 
     // Upload props for Edit Modal
     const uploadPropsEdit = {
@@ -459,20 +367,13 @@ const CategoryTable = () => {
             setEditUploadedFile(file);
             const url = URL.createObjectURL(file);
             setEditPreviewUrl(url);
-            editForm.setFieldsValue({ categoryImage: null });
-            return false;
+            editForm.setFieldsValue({ categoryImage: null }); // Clear gallery selection
+            return false; // Prevent default upload behavior
         },
         fileList: editUploadedFile ? [editUploadedFile] : [],
     };
 
     // Remove uploaded image for Add Modal
-    const handleRemoveAddImage = () => {
-        setAddUploadedFile(null);
-        setAddPreviewUrl(null);
-        if (addPreviewUrl) {
-            URL.revokeObjectURL(addPreviewUrl);
-        }
-    };
 
     // Remove uploaded image for Edit Modal
     const handleRemoveEditImage = () => {
@@ -485,149 +386,18 @@ const CategoryTable = () => {
 
     return (
         <div>
-            <div style={{ marginBottom: "16px" }}>
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={showModal}
-                    loading={isPosting}
-                    disabled={isPosting}
-                >
-                    Yeni Kateqoriya Əlavə edin
-                </Button>
-            </div>
 
-            <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="categories">
-                    {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                            <Table
-                                rowKey="id"
-                                columns={columns}
-                                dataSource={categories}
-                                pagination={{ pageSize: 4 }}
-                                expandedRowRender={expandedRowRender}
-                                components={{
-                                    body: {
-                                        row: ({ children, ...props }) => {
-                                            const index = categories.findIndex((cat) => cat.id === props["data-row-key"]);
-                                            return (
-                                                <Draggable
-                                                    draggableId={props["data-row-key"]}
-                                                    index={index}
-                                                    isDragDisabled={isOrdering || isDeleting || isPosting || isPutting}
-                                                >
-                                                    {(provided, snapshot) => (
-                                                        <tr
-                                                            ref={provided.innerRef}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
-                                                            {...props}
-                                                            style={{
-                                                                ...props.style,
-                                                                background: snapshot.isDragging ? "#f0f0f0" : "inherit",
-                                                            }}
-                                                        >
-                                                            {children}
-                                                        </tr>
-                                                    )}
-                                                </Draggable>
-                                            );
-                                        },
-                                    },
-                                }}
-                            />
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
+
+            <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={categories}
+                pagination={{ pageSize: 4 }}
+                expandedRowRender={expandedRowRender}
+            />
 
             {/* Yeni Kateqoriya Əlavə edin Modal */}
-            <Modal
-                title="Yeni Kateqoriya Əlavə edin"
-                visible={isModalVisible}
-                onOk={handlePost}
-                onCancel={handleCancel}
-                cancelText="Ləğv et"
-                okText="Əlavə Et"
-                width={800}
-                okButtonProps={{ loading: isPosting, disabled: isPosting }}
-            >
-                <Form form={addForm} layout="vertical">
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                label="Kateqoriya Adı (AZ)"
-                                name="name"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                            <Form.Item
-                                label="Kateqoriya Adı (ENG)"
-                                name="nameEng"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                            <Form.Item
-                                label="Kateqoriya Adı (RU)"
-                                name="nameRu"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                label="Kart Şəkli"
-                                name="categoryImage"
-                                rules={[{ required: !addUploadedFile, message: "Şəkil seçin və ya yükləyin!" }]}
-                            >
-                                <div>
-                                    <Upload {...uploadPropsAdd} accept="image/*">
-                                        <Button icon={<UploadOutlined />}>Şəkil Yüklə</Button>
-                                    </Upload>
-                                    {addPreviewUrl && (
-                                        <div style={{ marginTop: 16 }}>
-                                            <Image
-                                                src={addPreviewUrl}
-                                                alt="Yüklənmiş Şəkil"
-                                                style={{ width: 100, height: 100, objectFit: "contain" }}
-                                            />
-                                            <Button
-                                                type="link"
-                                                danger
-                                                onClick={handleRemoveAddImage}
-                                                style={{ marginTop: 8 }}
-                                            >
-                                                Şəkli Sil
-                                            </Button>
-                                        </div>
-                                    )}
-                                    <div style={{ marginTop: 16 }}>
-                                        <ImagePickerGalleryAlternative
-                                            onChange={(value) => addForm.setFieldsValue({ categoryImage: value })}
-                                            value={addForm.getFieldValue("categoryImage")}
-                                            disabled={!!addUploadedFile}
-                                        />
-                                    </div>
-                                </div>
-                            </Form.Item>
-                            <Form.Item label="Ana Kateqoriya" name="parentCategoryId">
-                                <Select placeholder="Ana kateqoriya seçin" allowClear>
-                                    {categories?.map((category) => (
-                                        <Select.Option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </Select.Option>
-                                    ))}
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </Form>
-            </Modal>
+
 
             {/* Edit Category Modal */}
             <Modal
@@ -701,17 +471,7 @@ const CategoryTable = () => {
                                     </div>
                                 </div>
                             </Form.Item>
-                            <Form.Item label="Ana Kateqoriya" name="parentCategoryId">
-                                <Select placeholder="Ana kateqoriya seçin" allowClear>
-                                    {categories
-                                        ?.filter((category) => category.id !== editingRecord?.id)
-                                        .map((category) => (
-                                            <Select.Option key={category.id} value={category.id}>
-                                                {category.name}
-                                            </Select.Option>
-                                        ))}
-                                </Select>
-                            </Form.Item>
+
                         </Col>
                     </Row>
                 </Form>
@@ -720,4 +480,4 @@ const CategoryTable = () => {
     );
 };
 
-export default CategoryTable;
+export default SubCategoryTable;

@@ -7,6 +7,7 @@ import CategoryPage from "../pages/UserPages/CategoryPage/index.jsx";
 import MenuPage from "../pages/UserPages/MenuPage/index.jsx";
 import AdminLogin from "../pages/AdminPages/AdminLogin/index.jsx";
 import ProtectedRoute from "../ProtectedRoute.jsx";
+import AdminCategoryDetail from "../pages/AdminPages/AdminCategoryDetail/index.jsx";
 
 
 const router = [
@@ -45,6 +46,10 @@ const router = [
             {
                 path: "/admin/food",
                 element: <AdminFood/>
+            },
+            {
+                path: "/admin/categories/:id",
+                element:<AdminCategoryDetail/>
             }
         ]
     },
