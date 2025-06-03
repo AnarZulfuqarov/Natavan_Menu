@@ -51,7 +51,10 @@ import icon23 from "/src/assets/icons/22.png";
 import icon24 from "/src/assets/icons/23.png";
 import icon25 from "/src/assets/icons/24.png";
 import icon26 from "/src/assets/icons/25.png";
-import icon27 from "/src/assets/icons/269.png";
+// import icon27 from "/src/assets/icons/";
+// import icon28 from "/src/assets/icons/19.png";
+// import icon29 from "/src/assets/icons/19.png";
+import showToast from "../../../components/ToastMessage.js";
 
 // Sabit resim listesi
 const availableImages = [
@@ -81,7 +84,6 @@ const availableImages = [
     { name: "24.png", src: icon24 },
     { name: "25.png", src: icon25 },
     { name: "26.png", src: icon26 },
-    { name: "27.png", src: icon27 },
 ];
 
 // Köməkçi funksiya: verilmiş URL-dən File obyektinə çevirir
@@ -95,7 +97,7 @@ const convertImageToFile = async (imgSrc, fileName) => {
 const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
     const handleClick = (imgName) => {
         if (!disabled) {
-            onChange(imgName); // Şəkil seçildikdə dərhal onChange çağırılır
+            onChange(imgName);
         }
     };
 
@@ -121,14 +123,14 @@ const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
                     style={{
                         width: "100px",
                         height: "100px",
-                        border: value === imgObj.name ? "2px solid #fadb14" : "1px solid #ccc", // Yellow border for selected
+                        border: value === imgObj.name ? "2px solid #1890ff" : "1px solid #ccc",
                         borderRadius: "4px",
                         cursor: disabled ? "not-allowed" : "pointer",
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
                         padding: "4px",
-                        backgroundColor: value === imgObj.name ? "#fefcbf" : "transparent", // Light yellow background for selected
                     }}
                 >
                     <img
