@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import React ,{ useState, useCallback, useEffect } from "react";
 import {
     Table,
     Button,
@@ -14,14 +14,14 @@ import {
 import {
     EditOutlined,
     DeleteOutlined,
-    PlusOutlined,
-    UploadOutlined, EyeOutlined,
+    UploadOutlined,
+    EyeOutlined,
 } from "@ant-design/icons";
 import {
-    usePostCategorysMutation,
     usePutCategorysMutation,
     useDeleteCategorysMutation,
-     useGetCategorysByIdQuery,
+    useGetCategorysByIdQuery,
+    usePutCategorysOrderMutation,
 } from "../../../services/userApi.jsx";
 import { CATEGORY_IMAGES } from "../../../contants.js";
 import icon1 from "/src/assets/icons/icon.png";
@@ -52,7 +52,9 @@ import icon25 from "/src/assets/icons/24.png";
 import icon26 from "/src/assets/icons/25.png";
 import icon27 from "/src/assets/icons/269.png";
 import showToast from "../../../components/ToastMessage.js";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useDrag, useDrop } from 'react-dnd';
+import update from 'immutability-helper';
 
 const availableImages = [
     { name: "1.png", src: icon1 },
@@ -90,7 +92,50 @@ const convertImageToFile = async (imgSrc, fileName) => {
     return new File([blob], fileName, { type: blob.type });
 };
 
-// ImagePickerGalleryAlternative komponenti
+// Item type for react-dnd
+const ItemTypes = {
+    ROW: 'row',
+};
+
+// DraggableRow component
+const DraggableRow = ({ index, moveRow, className, style, ...restProps }) => {
+    const ref = React.useRef();
+    const [{ isOver, dropClassName }, drop] = useDrop({
+        accept: ItemTypes.ROW,
+        collect: (monitor) => {
+            const { index: dragIndex } = monitor.getItem() || {};
+            if (dragIndex === index) {
+                return {};
+            }
+            return {
+                isOver: monitor.isOver(),
+                dropClassName: dragIndex < index ? 'drop-over-downward' : 'drop-over-upward',
+            };
+        },
+        drop: (item) => {
+            moveRow(item.index, index);
+        },
+    });
+    const [{ isDragging }, drag] = useDrag({
+        type: ItemTypes.ROW,
+        item: { index },
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+    drop(drag(ref));
+
+    return (
+        <tr
+            ref={ref}
+            className={`${className} ${isOver ? dropClassName : ''}`}
+            style={{ cursor: 'move', ...style, opacity: isDragging ? 0.5 : 1 }}
+            {...restProps}
+        />
+    );
+};
+
+// ImagePickerGalleryAlternative component
 const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
     const handleClick = (imgName) => {
         if (!disabled) {
@@ -145,18 +190,13 @@ const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
     );
 };
 
-const SubCategoryTable = ({id}) => {
+const SubCategoryTable = ({ id }) => {
     const { data: getAllCategory, refetch: refetchCategories } = useGetCategorysByIdQuery(id);
-    const categories = getAllCategory?.data?.subCategories || [];
-    console.log(categories);
+    const [subCategories, setSubCategories] = useState([]);
     const [putCategory, { isLoading: isPutting }] = usePutCategorysMutation();
     const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategorysMutation();
+    const [putCategorysOrder, { isLoading: isOrdering }] = usePutCategorysOrderMutation();
     const navigate = useNavigate();
-    // Add Modal state
-
-    const [addForm] = Form.useForm();
-    const [addUploadedFile, setAddUploadedFile] = useState(null);
-    const [addPreviewUrl, setAddPreviewUrl] = useState(null);
 
     // Edit Modal state
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -165,18 +205,69 @@ const SubCategoryTable = ({id}) => {
     const [editUploadedFile, setEditUploadedFile] = useState(null);
     const [editPreviewUrl, setEditPreviewUrl] = useState(null);
 
-    // Prepare data with subcategories
+    // Update subCategories only if data has changed
+    useEffect(() => {
+        if (getAllCategory?.data?.subCategories) {
+            const newSubCategories = getAllCategory.data.subCategories.map((subCategory, index) => ({
+                ...subCategory,
+                orderId: subCategory.orderId || index.toString(),
+            }));
+            if (JSON.stringify(subCategories) !== JSON.stringify(newSubCategories)) {
+                setSubCategories(newSubCategories);
+            }
+        }
+    }, [getAllCategory]);
 
+    // Handle reordering
+    const handleReOrder = useCallback(async (updatedSubCategories) => {
+        try {
+            const orderPayload = updatedSubCategories.map((subCategory, index) => ({
+                id: subCategory.id,
+                orderId: index.toString(),
+            }));
+            await putCategorysOrder(orderPayload).unwrap();
+            showToast("Alt kateqoriya sırası uğurla yeniləndi!", "success");
+        } catch (error) {
+            console.error("Order Update Error:", error);
+            const errorMsg = error?.data?.error || "Sıra yenilənərkən xəta baş verdi!";
+            showToast(errorMsg, "error");
+        }
+    }, [putCategorysOrder]);
+
+    // Move row for drag-and-drop
+    const moveRow = useCallback(
+        (dragIndex, hoverIndex) => {
+            const dragRow = subCategories[dragIndex];
+            const newSubCategories = update(subCategories, {
+                $splice: [
+                    [dragIndex, 1],
+                    [hoverIndex, 0, dragRow],
+                ],
+            });
+            setSubCategories(newSubCategories);
+            const timeout = setTimeout(() => {
+                handleReOrder(newSubCategories);
+            }, 300);
+            return () => clearTimeout(timeout);
+        },
+        [subCategories, handleReOrder]
+    );
 
     const handleViewDetails = (record) => {
-        navigate(`/admin/categories/${record.id}`); // Adjust the path as needed
+        navigate(`/admin/categories/${record.id}`);
     };
-    // Tablo sütunları
+
+    // Table columns
     const columns = [
         {
             title: "#",
             key: "index",
-            render: (text, record, index) => <div>{index + 1}</div>,
+            render: (text, record, index) => (
+                <div style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ marginRight: 8, cursor: "grab" }}>::</span>
+                    {index + 1}
+                </div>
+            ),
         },
         {
             title: "Şəkil",
@@ -197,11 +288,10 @@ const SubCategoryTable = ({id}) => {
             key: "name",
             render: (name, record) => (
                 <span>
-                     <strong>{name}</strong>
+                    <strong>{name}</strong>
                 </span>
             ),
         },
-
         {
             title: "Fəaliyyətlər",
             key: "actions",
@@ -211,29 +301,29 @@ const SubCategoryTable = ({id}) => {
                         icon={<EyeOutlined />}
                         onClick={() => handleViewDetails(record)}
                         style={{ marginRight: 8 }}
-                        disabled={isDeleting}
+                        disabled={isDeleting || isOrdering}
                     />
                     <Button
                         icon={<EditOutlined />}
                         onClick={() => handleEdit(record)}
                         style={{ marginRight: 8 }}
-                        disabled={isDeleting}
+                        disabled={isDeleting || isOrdering}
                     />
                     <Popconfirm
                         title="Bu kateqoriyanı siləcəyinizə əminsiniz?"
                         onConfirm={() => handleDelete(record)}
                         okText="Bəli"
                         cancelText="Xeyr"
-                        disabled={isDeleting}
+                        disabled={isDeleting || isOrdering}
                     >
-                        <Button icon={<DeleteOutlined />} danger disabled={isDeleting} />
+                        <Button icon={<DeleteOutlined />} danger disabled={isDeleting || isOrdering} />
                     </Popconfirm>
                 </>
             ),
         },
     ];
 
-    // Expanded row – digər dillərdəki dəyərlər və products göstərilir
+    // Expanded row
     const expandedRowRender = (record) => {
         return (
             <div>
@@ -247,12 +337,11 @@ const SubCategoryTable = ({id}) => {
                         <strong>Ad (RU):</strong> {record.nameRu}
                     </p>
                 )}
-
             </div>
         );
     };
 
-    // Delete əməliyyatı
+    // Delete operation
     const handleDelete = async (record) => {
         try {
             await deleteCategory(record.id).unwrap();
@@ -265,7 +354,7 @@ const SubCategoryTable = ({id}) => {
         }
     };
 
-    // Edit butonuna tıklayınca
+    // Edit button click
     const handleEdit = (record) => {
         setEditingRecord(record);
         editForm.setFieldsValue({
@@ -273,29 +362,14 @@ const SubCategoryTable = ({id}) => {
             nameEng: record.nameEng,
             nameRu: record.nameRu,
             categoryImage: record.categoryImage,
-            parentCategoryId: record.parentCategoryId || null,
+            parentCategoryId: record.parentCategoryId || id,
         });
         setEditUploadedFile(null);
         setEditPreviewUrl(null);
         setIsEditModalVisible(true);
     };
 
-    // Add Modal açmaq
-    const showModal = () => {
-        setIsModalVisible(true);
-    };
-
-    const handleCancel = () => {
-        setIsModalVisible(false);
-        addForm.resetFields();
-        setAddUploadedFile(null);
-        setAddPreviewUrl(null);
-    };
-
-    // Yeni Kateqoriya POST əməliyyatı
-
-
-    // Edit Modal cancel əməliyyatı
+    // Edit Modal cancel
     const handleEditCancel = () => {
         setIsEditModalVisible(false);
         editForm.resetFields();
@@ -304,7 +378,7 @@ const SubCategoryTable = ({id}) => {
         setEditPreviewUrl(null);
     };
 
-    // Edit Kateqoriya PUT əməliyyatı
+    // Edit Category PUT operation
     const handleEditSubmit = () => {
         editForm
             .validateFields()
@@ -354,8 +428,6 @@ const SubCategoryTable = ({id}) => {
             });
     };
 
-    // Upload props for Add Modal
-
     // Upload props for Edit Modal
     const uploadPropsEdit = {
         beforeUpload: (file) => {
@@ -367,13 +439,11 @@ const SubCategoryTable = ({id}) => {
             setEditUploadedFile(file);
             const url = URL.createObjectURL(file);
             setEditPreviewUrl(url);
-            editForm.setFieldsValue({ categoryImage: null }); // Clear gallery selection
-            return false; // Prevent default upload behavior
+            editForm.setFieldsValue({ categoryImage: null });
+            return false;
         },
         fileList: editUploadedFile ? [editUploadedFile] : [],
     };
-
-    // Remove uploaded image for Add Modal
 
     // Remove uploaded image for Edit Modal
     const handleRemoveEditImage = () => {
@@ -384,16 +454,28 @@ const SubCategoryTable = ({id}) => {
         }
     };
 
+    // Table components for react-dnd
+    const components = {
+        body: {
+            row: DraggableRow,
+        },
+    };
+
     return (
-        <div>
+        <div style={{ marginBottom: "20px" }}>
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={categories}
-                pagination={{ pageSize: 4 }}
+                dataSource={subCategories}
+                scroll={{ y: '40vh' }}
+                pagination={false}
                 expandedRowRender={expandedRowRender}
+                components={components}
+                onRow={(record, index) => ({
+                    index,
+                    moveRow,
+                })}
             />
-
             <Modal
                 title="Kateqoriya Redaktə Et"
                 visible={isEditModalVisible}
@@ -425,6 +507,12 @@ const SubCategoryTable = ({id}) => {
                                 label="Kateqoriya Adı (RU)"
                                 name="nameRu"
                                 rules={[{ required: true, message: "Ad daxil edin!" }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                            <Form.Item
+                                name="parentCategoryId"
+                                hidden
                             >
                                 <Input />
                             </Form.Item>
@@ -465,7 +553,6 @@ const SubCategoryTable = ({id}) => {
                                     </div>
                                 </div>
                             </Form.Item>
-
                         </Col>
                     </Row>
                 </Form>

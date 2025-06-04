@@ -26,6 +26,7 @@ import {
 import {PRODUCT_IMAGES} from "/src/contants.js";
 import {useDrag, useDrop} from 'react-dnd';
 import update from 'immutability-helper';
+import showToast from "../../../components/ToastMessage.js";
 
 const ItemTypes = {
     ROW: 'row',
@@ -165,10 +166,10 @@ const AdminCategoryDetailTable = ({id}) => {
                 orderId: index.toString(),
             }));
             await putProductsOrder(payload).unwrap();
-            message.success("Sıralama uğurla yeniləndi!");
+            showToast("Sıralama uğurla yeniləndi!",'success');
         } catch (error) {
             console.error("Error updating product order:", error);
-            message.error(error?.data?.message || "Sıralama yenilənərkən xəta baş verdi!");
+            showToast("Sıralama yenilənərkən xəta baş verdi!","error");
         }
     }, [putProductsOrder]);
 
