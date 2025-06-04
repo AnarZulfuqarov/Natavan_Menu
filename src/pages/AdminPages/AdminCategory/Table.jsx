@@ -10,14 +10,11 @@ import {
     Row,
     Col,
     Select,
-    Upload,
-    Image,
 } from "antd";
 import {
     EditOutlined,
     DeleteOutlined,
     PlusOutlined,
-    UploadOutlined,
     EyeOutlined,
 } from "@ant-design/icons";
 import {
@@ -133,24 +130,26 @@ const DraggableRow = ({ index, moveRow, className, style, ...restProps }) => {
     );
 };
 
-// Köməkçi funksiya: verilmiş URL-dən File obyektinə çevirir
+// Helper function to convert image URL to File object
 const convertImageToFile = async (imgSrc, fileName) => {
-    const res = await fetch(imgSrc);
-    const blob = await res.blob();
-    return new File([blob], fileName, { type: blob.type });
+    try {
+        const res = await fetch(imgSrc);
+        if (!res.ok) throw new Error("Failed to fetch image");
+        const blob = await res.blob();
+        return new File([blob], fileName, { type: blob.type });
+    } catch (error) {
+        throw new Error(`Image conversion failed: ${error.message}`);
+    }
 };
 
-// ImagePickerGalleryAlternative komponenti
-const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
+// ImagePickerGallery component
+const ImagePickerGallery = ({ value, onChange }) => {
     const handleClick = (imgName) => {
-        if (!disabled) {
-            onChange(imgName);
-        }
+        onChange(imgName);
     };
 
     return (
         <div
-            className="image-picker-gallery-alternative"
             style={{
                 display: "flex",
                 flexWrap: "wrap",
@@ -158,23 +157,19 @@ const ImagePickerGalleryAlternative = ({ value, onChange, disabled }) => {
                 maxHeight: "250px",
                 overflowY: "auto",
                 padding: "5px",
-                opacity: disabled ? 0.5 : 1,
-                pointerEvents: disabled ? "none" : "auto",
             }}
         >
             {availableImages.map((imgObj) => (
                 <div
                     key={imgObj.name}
                     onClick={() => handleClick(imgObj.name)}
-                    className={`image-card ${value === imgObj.name ? "selected" : ""}`}
                     style={{
                         width: "100px",
                         height: "100px",
                         border: value === imgObj.name ? "2px solid #1890ff" : "1px solid #ccc",
                         borderRadius: "4px",
-                        cursor: disabled ? "not-allowed" : "pointer",
+                        cursor: "pointer",
                         display: "flex",
-                        flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
                         padding: "4px",
@@ -207,15 +202,11 @@ const CategoryTable = () => {
     // Add Modal state
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [addForm] = Form.useForm();
-    const [addUploadedFile, setAddUploadedFile] = useState(null);
-    const [addPreviewUrl, setAddPreviewUrl] = useState(null);
 
     // Edit Modal state
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editForm] = Form.useForm();
     const [editingRecord, setEditingRecord] = useState(null);
-    const [editUploadedFile, setEditUploadedFile] = useState(null);
-    const [editPreviewUrl, setEditPreviewUrl] = useState(null);
 
     // Update categories only if data has changed
     useEffect(() => {
@@ -375,8 +366,6 @@ const CategoryTable = () => {
             categoryImage: record.categoryImage,
             parentCategoryId: record.parentCategoryId || null,
         });
-        setEditUploadedFile(null);
-        setEditPreviewUrl(null);
         setIsEditModalVisible(true);
     };
 
@@ -389,54 +378,38 @@ const CategoryTable = () => {
     const handleCancel = () => {
         setIsModalVisible(false);
         addForm.resetFields();
-        setAddUploadedFile(null);
-        setAddPreviewUrl(null);
     };
 
     // Add Category POST operation
-    const handlePost = () => {
-        addForm
-            .validateFields()
-            .then(async (values) => {
-                const formData = new FormData();
-                const textFields = ["name", "nameEng", "nameRu", "parentCategoryId"];
-                textFields.forEach((field) => {
-                    if (values[field]) {
-                        formData.append(field, values[field]);
-                    }
-                });
-                if (addUploadedFile) {
-                    formData.append("categoryImage", addUploadedFile);
-                } else if (values.categoryImage) {
-                    const imgObj = availableImages.find((item) => item.name === values.categoryImage);
-                    if (imgObj) {
-                        try {
-                            const file = await convertImageToFile(imgObj.src, imgObj.name);
-                            formData.append("categoryImage", file);
-                        } catch (error) {
-                            console.error("Image conversion error:", error);
-                            showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
-                            return;
-                        }
-                    }
+    const handlePost = async () => {
+        try {
+            const values = await addForm.validateFields();
+            const formData = new FormData();
+            const textFields = ["name", "nameEng", "nameRu", "parentCategoryId"];
+            textFields.forEach((field) => {
+                if (values[field]) {
+                    formData.append(field, values[field]);
                 }
-                try {
-                    await postCategory(formData).unwrap();
-                    showToast("Kateqoriya uğurla əlavə edildi!", "success");
-                    setIsModalVisible(false);
-                    addForm.resetFields();
-                    setAddUploadedFile(null);
-                    setAddPreviewUrl(null);
-                    refetchCategories();
-                } catch (error) {
-                    console.error("POST Error:", error);
-                    const errorMsg = error?.data?.error || "Kateqoriya əlavə edilərkən xəta baş verdi!";
-                    showToast(errorMsg, "error");
-                }
-            })
-            .catch((errorInfo) => {
-                console.log("Validation Failed:", errorInfo);
             });
+            if (values.categoryImage) {
+                const imgObj = availableImages.find((item) => item.name === values.categoryImage);
+                if (imgObj) {
+                    const file = await convertImageToFile(imgObj.src, imgObj.name);
+                    formData.append("categoryImage", file);
+                } else {
+                    throw new Error("Selected image not found");
+                }
+            }
+            await postCategory(formData).unwrap();
+            showToast("Kateqoriya uğurla əlavə edildi!", "success");
+            setIsModalVisible(false);
+            addForm.resetFields();
+            refetchCategories();
+        } catch (error) {
+            console.error("POST Error:", error);
+            const errorMsg = error.message || error?.data?.error || "Kateqoriya əlavə edilərkən xəta baş verdi!";
+            showToast(errorMsg, "error");
+        }
     };
 
     // Edit Modal cancel
@@ -444,109 +417,41 @@ const CategoryTable = () => {
         setIsEditModalVisible(false);
         editForm.resetFields();
         setEditingRecord(null);
-        setEditUploadedFile(null);
-        setEditPreviewUrl(null);
     };
 
     // Edit Category PUT operation
-    const handleEditSubmit = () => {
-        editForm
-            .validateFields()
-            .then(async (values) => {
-                const formData = new FormData();
-                const textFields = ["name", "nameEng", "nameRu", "parentCategoryId"];
-                textFields.forEach((field) => {
-                    if (values[field]) {
-                        formData.append(field, values[field]);
-                    }
-                });
-                if (editingRecord?.id) {
-                    formData.append("id", editingRecord.id);
+    const handleEditSubmit = async () => {
+        try {
+            const values = await editForm.validateFields();
+            const formData = new FormData();
+            const textFields = ["name", "nameEng", "nameRu", "parentCategoryId"];
+            textFields.forEach((field) => {
+                if (values[field]) {
+                    formData.append(field, values[field]);
                 }
-                if (editUploadedFile) {
-                    formData.append("categoryImage", editUploadedFile);
-                } else if (values.categoryImage) {
-                    const imgObj = availableImages.find((item) => item.name === values.categoryImage);
-                    if (imgObj) {
-                        try {
-                            const file = await convertImageToFile(imgObj.src, imgObj.name);
-                            formData.append("categoryImage", file);
-                        } catch (error) {
-                            console.error("Image conversion error:", error);
-                            showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
-                            return;
-                        }
-                    }
-                }
-                try {
-                    await putCategory(formData).unwrap();
-                    showToast("Kateqoriya uğurla yeniləndi!", "success");
-                    setIsEditModalVisible(false);
-                    editForm.resetFields();
-                    setEditingRecord(null);
-                    setEditUploadedFile(null);
-                    setEditPreviewUrl(null);
-                    refetchCategories();
-                } catch (error) {
-                    console.error("PUT Error:", error);
-                    const errorMsg = error?.data?.error || "Kateqoriya yenilənərkən xəta baş verdi!";
-                    showToast(errorMsg, "error");
-                }
-            })
-            .catch((errorInfo) => {
-                console.log("Validation Failed:", errorInfo);
             });
-    };
-
-    // Upload props for Add Modal
-    const uploadPropsAdd = {
-        beforeUpload: (file) => {
-            const isImage = file.type.startsWith("image/");
-            if (!isImage) {
-                showToast("Yalnız şəkil faylları yüklənə bilər!", "error");
-                return false;
+            if (editingRecord?.id) {
+                formData.append("id", editingRecord.id);
             }
-            setAddUploadedFile(file);
-            const url = URL.createObjectURL(file);
-            setAddPreviewUrl(url);
-            addForm.setFieldsValue({ categoryImage: null });
-            return false;
-        },
-        fileList: addUploadedFile ? [addUploadedFile] : [],
-    };
-
-    // Upload props for Edit Modal
-    const uploadPropsEdit = {
-        beforeUpload: (file) => {
-            const isImage = file.type.startsWith("image/");
-            if (!isImage) {
-                showToast("Yalnız şəkil faylları yüklənə bilər!", "error");
-                return false;
+            if (values.categoryImage) {
+                const imgObj = availableImages.find((item) => item.name === values.categoryImage);
+                if (imgObj) {
+                    const file = await convertImageToFile(imgObj.src, imgObj.name);
+                    formData.append("categoryImage", file);
+                } else {
+                    throw new Error("Selected image not found");
+                }
             }
-            setEditUploadedFile(file);
-            const url = URL.createObjectURL(file);
-            setEditPreviewUrl(url);
-            editForm.setFieldsValue({ categoryImage: null });
-            return false;
-        },
-        fileList: editUploadedFile ? [editUploadedFile] : [],
-    };
-
-    // Remove uploaded image for Add Modal
-    const handleRemoveAddImage = () => {
-        setAddUploadedFile(null);
-        setAddPreviewUrl(null);
-        if (addPreviewUrl) {
-            URL.revokeObjectURL(addPreviewUrl);
-        }
-    };
-
-    // Remove uploaded image for Edit Modal
-    const handleRemoveEditImage = () => {
-        setEditUploadedFile(null);
-        setEditPreviewUrl(null);
-        if (editPreviewUrl) {
-            URL.revokeObjectURL(editPreviewUrl);
+            await putCategory(formData).unwrap();
+            showToast("Kateqoriya uğurla yeniləndi!", "success");
+            setIsEditModalVisible(false);
+            editForm.resetFields();
+            setEditingRecord(null);
+            refetchCategories();
+        } catch (error) {
+            console.error("PUT Error:", error);
+            const errorMsg = error.message || error?.data?.error || "Kateqoriya yenilənərkən xəta baş verdi!";
+            showToast(errorMsg, "error");
         }
     };
 
@@ -583,7 +488,6 @@ const CategoryTable = () => {
                 })}
                 scroll={{ y: '72vh' }}
                 pagination={false}
-
             />
 
             <Modal
@@ -625,53 +529,19 @@ const CategoryTable = () => {
                             <Form.Item
                                 label="Kart Şəkli"
                                 name="categoryImage"
-                                rules={[{ required: !addUploadedFile, message: "Şəkil seçin və ya yükləyin!" }]}
+                                rules={[{ required: true, message: "Şəkil seçin!" }]}
                             >
-                                <div>
-                                    <Upload {...uploadPropsAdd} accept="image/*">
-                                        <Button icon={<UploadOutlined />}>Şəkil Yüklə</Button>
-                                    </Upload>
-                                    {addPreviewUrl && (
-                                        <div style={{ marginTop: 16 }}>
-                                            <Image
-                                                src={addPreviewUrl}
-                                                alt="Yüklənmiş Şəkil"
-                                                style={{ width: 100, height: 100, objectFit: "contain" }}
-                                            />
-                                            <Button
-                                                type="link"
-                                                danger
-                                                onClick={handleRemoveAddImage}
-                                                style={{ marginTop: 8 }}
-                                            >
-                                                Şəkli Sil
-                                            </Button>
-                                        </div>
-                                    )}
-                                    <div style={{ marginTop: 16 }}>
-                                        <ImagePickerGalleryAlternative
-                                            onChange={(value) => addForm.setFieldsValue({ categoryImage: value })}
-                                            value={addForm.getFieldValue("categoryImage")}
-                                            disabled={!!addUploadedFile}
-                                        />
-                                    </div>
-                                </div>
+                                <ImagePickerGallery
+                                    onChange={(value) => addForm.setFieldsValue({ categoryImage: value })}
+                                    value={addForm.getFieldValue("categoryImage")}
+                                />
                             </Form.Item>
-                            <Form.Item label="Ana Kateqoriya" name="parentCategoryId">
-                                <Select placeholder="Ana kateqoriya seçin" allowClear>
-                                    {categories?.map((category) => (
-                                        <Select.Option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </Select.Option>
-                                    ))}
-                                </Select>
-                            </Form.Item>
+
                         </Col>
                     </Row>
                 </Form>
             </Modal>
 
-            {/* Edit Category Modal */}
             <Modal
                 title="Kateqoriya Redaktə Et"
                 visible={isEditModalVisible}
@@ -711,48 +581,12 @@ const CategoryTable = () => {
                             <Form.Item
                                 label="Kart Şəkli"
                                 name="categoryImage"
-                                rules={[{ required: !editUploadedFile, message: "Şəkil seçin və ya yükləyin!" }]}
+                                rules={[{ required: true, message: "Şəkil seçin!" }]}
                             >
-                                <div>
-                                    <Upload {...uploadPropsEdit} accept="image/*">
-                                        <Button icon={<UploadOutlined />}>Şəkil Yüklə</Button>
-                                    </Upload>
-                                    {editPreviewUrl && (
-                                        <div style={{ marginTop: 16 }}>
-                                            <Image
-                                                src={editPreviewUrl}
-                                                alt="Yüklənmiş Şəkil"
-                                                style={{ width: 100, height: 100, objectFit: "contain" }}
-                                            />
-                                            <Button
-                                                type="link"
-                                                danger
-                                                onClick={handleRemoveEditImage}
-                                                style={{ marginTop: 8 }}
-                                            >
-                                                Şəkli Sil
-                                            </Button>
-                                        </div>
-                                    )}
-                                    <div style={{ marginTop: 16 }}>
-                                        <ImagePickerGalleryAlternative
-                                            onChange={(value) => editForm.setFieldsValue({ categoryImage: value })}
-                                            value={editForm.getFieldValue("categoryImage")}
-                                            disabled={!!editUploadedFile}
-                                        />
-                                    </div>
-                                </div>
-                            </Form.Item>
-                            <Form.Item label="Ana Kateqoriya" name="parentCategoryId">
-                                <Select placeholder="Ana kateqoriya seçin" allowClear>
-                                    {categories
-                                        ?.filter((category) => category.id !== editingRecord?.id)
-                                        .map((category) => (
-                                            <Select.Option key={category.id} value={category.id}>
-                                                {category.name}
-                                            </Select.Option>
-                                        ))}
-                                </Select>
+                                <ImagePickerGallery
+                                    onChange={(value) => editForm.setFieldsValue({ categoryImage: value })}
+                                    value={editForm.getFieldValue("categoryImage")}
+                                />
                             </Form.Item>
                         </Col>
                     </Row>

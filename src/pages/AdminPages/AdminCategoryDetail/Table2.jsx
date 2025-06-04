@@ -386,8 +386,6 @@ const SubCategoryTable = ({id}) => {
 
     return (
         <div>
-
-
             <Table
                 rowKey="id"
                 columns={columns}
@@ -396,10 +394,6 @@ const SubCategoryTable = ({id}) => {
                 expandedRowRender={expandedRowRender}
             />
 
-            {/* Yeni Kateqoriya Əlavə edin Modal */}
-
-
-            {/* Edit Category Modal */}
             <Modal
                 title="Kateqoriya Redaktə Et"
                 visible={isEditModalVisible}
