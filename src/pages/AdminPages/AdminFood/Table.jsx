@@ -380,11 +380,20 @@ const FoodTable = () => {
                             <Form.Item
                                 name="price"
                                 label="Qiymət"
-                                rules={[{ required: true, message: "Qiymət daxil edin!" }]}
+                                rules={[
+                                    { required: true, message: "Qiymət daxil edin!" },
+                                    {
+                                        validator: (_, value) =>
+                                            value >= 0
+                                                ? Promise.resolve()
+                                                : Promise.reject("Qiymət 0-dan kiçik ola bilməz!"),
+                                    },
+                                ]}
                             >
                                 <Input
                                     type="number"
                                     step="0.01"
+                                    min={0}
                                     placeholder="Qiymət daxil edin"
                                     className="rounded-md"
                                 />
@@ -491,11 +500,20 @@ const FoodTable = () => {
                             <Form.Item
                                 name="price"
                                 label="Qiymət"
-                                rules={[{ required: true, message: "Qiymət daxil edin!" }]}
+                                rules={[
+                                    { required: true, message: "Qiymət daxil edin!" },
+                                    {
+                                        validator: (_, value) =>
+                                            value >= 0
+                                                ? Promise.resolve()
+                                                : Promise.reject("Qiymət 0-dan kiçik ola bilməz!"),
+                                    },
+                                ]}
                             >
                                 <Input
                                     type="number"
                                     step="0.01"
+                                    min={0}
                                     placeholder="Qiymət daxil edin"
                                     className="rounded-md"
                                 />
