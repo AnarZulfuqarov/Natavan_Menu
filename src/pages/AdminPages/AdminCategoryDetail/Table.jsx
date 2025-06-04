@@ -1,5 +1,5 @@
 import './index.scss';
-import React, { useState, useEffect, useCallback } from "react";
+import React, {useState, useEffect, useCallback} from "react";
 import {
     Table,
     Button,
@@ -13,9 +13,9 @@ import {
     Upload,
     Image,
 } from "antd";
-import { FaRegEdit } from "react-icons/fa";
-import { MdDeleteForever } from "react-icons/md";
-import { UploadOutlined, DragOutlined } from "@ant-design/icons";
+import {FaRegEdit} from "react-icons/fa";
+import {MdDeleteForever} from "react-icons/md";
+import {UploadOutlined, DragOutlined, SearchOutlined} from "@ant-design/icons";
 import {
     useDeleteProductsMutation,
     useGetCategorysByIdQuery,
@@ -23,8 +23,8 @@ import {
     usePutProductsMutation,
     usePutPoductsOrderMutation,
 } from "/src/services/userApi.jsx";
-import { PRODUCT_IMAGES } from "/src/contants.js";
-import { useDrag, useDrop } from 'react-dnd';
+import {PRODUCT_IMAGES} from "/src/contants.js";
+import {useDrag, useDrop} from 'react-dnd';
 import update from 'immutability-helper';
 
 const ItemTypes = {
@@ -32,12 +32,12 @@ const ItemTypes = {
 };
 
 // DraggableRow component
-const DraggableRow = ({ index, moveRow, className, style, ...restProps }) => {
+const DraggableRow = ({index, moveRow, className, style, ...restProps}) => {
     const ref = React.useRef();
-    const [{ isOver, dropClassName }, drop] = useDrop({
+    const [{isOver, dropClassName}, drop] = useDrop({
         accept: ItemTypes.ROW,
         collect: (monitor) => {
-            const { index: dragIndex } = monitor.getItem() || {};
+            const {index: dragIndex} = monitor.getItem() || {};
             if (dragIndex === index) {
                 return {};
             }
@@ -50,9 +50,9 @@ const DraggableRow = ({ index, moveRow, className, style, ...restProps }) => {
             moveRow(item.index, index);
         },
     });
-    const [{ isDragging }, drag] = useDrag({
+    const [{isDragging}, drag] = useDrag({
         type: ItemTypes.ROW,
-        item: { index },
+        item: {index},
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),
@@ -63,19 +63,19 @@ const DraggableRow = ({ index, moveRow, className, style, ...restProps }) => {
         <tr
             ref={ref}
             className={`${className} ${isOver ? dropClassName : ''}`}
-            style={{ cursor: 'move', ...style, opacity: isDragging ? 0.5 : 1 }}
+            style={{cursor: 'move', ...style, opacity: isDragging ? 0.5 : 1}}
             {...restProps}
         />
     );
 };
 
-const AdminCategoryDetailTable = ({ id }) => {
-    const { data: getAllProducts, refetch: refetchFoods } = useGetCategorysByIdQuery(id);
-    const foods = getAllProducts?.data || { products: [], subCategories: [] };
-    const [postFood, { isLoading: isAdding }] = usePostProductsMutation();
-    const [putFood, { isLoading: isUpdating }] = usePutProductsMutation();
+const AdminCategoryDetailTable = ({id}) => {
+    const {data: getAllProducts, refetch: refetchFoods} = useGetCategorysByIdQuery(id);
+    const foods = getAllProducts?.data || {products: [], subCategories: []};
+    const [postFood, {isLoading: isAdding}] = usePostProductsMutation();
+    const [putFood, {isLoading: isUpdating}] = usePutProductsMutation();
     const [deleteFood] = useDeleteProductsMutation();
-    const [putProductsOrder, { isLoading: isOrdering }] = usePutPoductsOrderMutation();
+    const [putProductsOrder, {isLoading: isOrdering}] = usePutPoductsOrderMutation();
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [isEditModal, setIsEditModal] = useState(false);
     const [form] = Form.useForm();
@@ -84,6 +84,7 @@ const AdminCategoryDetailTable = ({ id }) => {
     const [fileList, setFileList] = useState([]);
     const [editFileList, setEditFileList] = useState([]);
     const [products, setProducts] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Initialize products with orderId
     useEffect(() => {
@@ -107,18 +108,18 @@ const AdminCategoryDetailTable = ({ id }) => {
     };
 
     // Image upload handlers
-    const handleUploadChange = ({ fileList }) => {
+    const handleUploadChange = ({fileList}) => {
         setFileList(fileList.slice(-1)); // Keep only one file
     };
 
-    const handleEditUploadChange = ({ fileList }) => {
+    const handleEditUploadChange = ({fileList}) => {
         setEditFileList(fileList.slice(-1)); // Keep only one file
     };
 
     // Modal handlers
     const showAddModal = () => {
         form.resetFields();
-        form.setFieldsValue({ categoryId: id });
+        form.setFieldsValue({categoryId: id});
         setFileList([]);
         setIsAddModalVisible(true);
     };
@@ -137,7 +138,7 @@ const AdminCategoryDetailTable = ({ id }) => {
         });
         setEditFileList(
             record.productImage
-                ? [{ uid: "-1", name: "image", status: "done", url: PRODUCT_IMAGES + record.productImage }]
+                ? [{uid: "-1", name: "image", status: "done", url: PRODUCT_IMAGES + record.productImage}]
                 : []
         );
         setIsEditModal(true);
@@ -191,7 +192,7 @@ const AdminCategoryDetailTable = ({ id }) => {
 
     // Form submission handlers
     const handleAddFood = async (values) => {
-        const { name, nameEng, nameRu, description, descriptionEng, descriptionRu, price } = values;
+        const {name, nameEng, nameRu, description, descriptionEng, descriptionRu, price} = values;
 
         const payload = new FormData();
         payload.append("name", name);
@@ -220,7 +221,7 @@ const AdminCategoryDetailTable = ({ id }) => {
     };
 
     const handleEditFood = async (values) => {
-        const { name, nameEng, nameRu, description, descriptionEng, descriptionRu, price } = values;
+        const {name, nameEng, nameRu, description, descriptionEng, descriptionRu, price} = values;
 
         const payload = new FormData();
         payload.append("id", editingFood.id);
@@ -261,13 +262,18 @@ const AdminCategoryDetailTable = ({ id }) => {
         }
     };
 
+    // Filter products based on search query
+    const filteredProducts = products.filter((product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     const columns = [
         {
             title: "",
             key: "drag",
             width: 50,
             render: () => (
-                <DragOutlined style={{ cursor: "move", fontSize: 16, color: "#999" }} />
+                <DragOutlined style={{cursor: "move", fontSize: 16, color: "#999"}}/>
             ),
         },
         {
@@ -314,9 +320,9 @@ const AdminCategoryDetailTable = ({ id }) => {
             title: "Əməliyyatlar",
             key: "actions",
             render: (text, record) => (
-                <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                <div style={{display: "flex", gap: "8px", justifyContent: "center"}}>
                     <Button type="primary" onClick={() => showEditModal(record)}>
-                        <FaRegEdit />
+                        <FaRegEdit/>
                     </Button>
                     <Popconfirm
                         title="Silmək istədiyinizə əminsiniz?"
@@ -325,7 +331,7 @@ const AdminCategoryDetailTable = ({ id }) => {
                         cancelText="Xeyr"
                     >
                         <Button type="default" danger>
-                            <MdDeleteForever />
+                            <MdDeleteForever/>
                         </Button>
                     </Popconfirm>
                 </div>
@@ -355,11 +361,18 @@ const AdminCategoryDetailTable = ({ id }) => {
 
     return (
         <div className="p-4">
-            <div style={{ marginBottom: "16px" }}>
+            <div style={{marginBottom: "16px", display: "flex", gap: "10px", alignItems: "center"}}>
+                <Input
+                    placeholder="Yemək adına görə axtar"
+                    prefix={<SearchOutlined/>}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{width: 300, borderRadius: "6px"}}
+                />
                 <Button
                     type="primary"
                     onClick={showAddModal}
-                    className="mb-4 bg-blue-500 hover:bg-blue-600"
+                    className="bg-blue-500 hover:bg-blue-600"
                 >
                     +
                 </Button>
@@ -368,13 +381,13 @@ const AdminCategoryDetailTable = ({ id }) => {
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={products}
+                dataSource={filteredProducts}
                 components={components}
                 onRow={(record, index) => ({
                     index,
                     moveRow,
                 })}
-                scroll={{ y: '72vh' }}
+                scroll={{y: '72vh'}}
                 pagination={false}
             />
 
@@ -393,29 +406,29 @@ const AdminCategoryDetailTable = ({ id }) => {
                             <Form.Item
                                 name="name"
                                 label="Yemək Adı (AZ)"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
+                                rules={[{required: true, message: "Ad daxil edin!"}]}
                             >
-                                <Input placeholder="Ad daxil edin" className="rounded-md" />
+                                <Input placeholder="Ad daxil edin" className="rounded-md"/>
                             </Form.Item>
                             <Form.Item
                                 name="nameEng"
                                 label="Yemək Adı (EN)"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
+                                rules={[{required: true, message: "Ad daxil edin!"}]}
                             >
-                                <Input placeholder="Ad daxil edin (EN)" className="rounded-md" />
+                                <Input placeholder="Ad daxil edin (EN)" className="rounded-md"/>
                             </Form.Item>
                             <Form.Item
                                 name="nameRu"
                                 label="Yemək Adı (RU)"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
+                                rules={[{required: true, message: "Ad daxil edin!"}]}
                             >
-                                <Input placeholder="Ad daxil edin (RU)" className="rounded-md" />
+                                <Input placeholder="Ad daxil edin (RU)" className="rounded-md"/>
                             </Form.Item>
                             <Form.Item
                                 name="price"
                                 label="Qiymət"
                                 rules={[
-                                    { required: true, message: "Qiymət daxil edin!" },
+                                    {required: true, message: "Qiymət daxil edin!"},
                                     {
                                         validator: (_, value) =>
                                             value >= 0
@@ -456,12 +469,12 @@ const AdminCategoryDetailTable = ({ id }) => {
                                 />
                             </Form.Item>
                             <Form.Item name="categoryId" hidden>
-                                <Input />
+                                <Input/>
                             </Form.Item>
                             <Form.Item name="productImage" label="Şəkil">
                                 <Upload {...uploadProps} maxCount={1}>
                                     <div>
-                                        <UploadOutlined />
+                                        <UploadOutlined/>
                                         <div>Şəkil Yüklə</div>
                                     </div>
                                 </Upload>
@@ -500,29 +513,29 @@ const AdminCategoryDetailTable = ({ id }) => {
                             <Form.Item
                                 name="name"
                                 label="Yemək Adı (AZ)"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
+                                rules={[{required: true, message: "Ad daxil edin!"}]}
                             >
-                                <Input placeholder="Ad daxil edin" className="rounded-md" />
+                                <Input placeholder="Ad daxil edin" className="rounded-md"/>
                             </Form.Item>
                             <Form.Item
                                 name="nameEng"
                                 label="Yemək Adı (EN)"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
+                                rules={[{required: true, message: "Ad daxil edin!"}]}
                             >
-                                <Input placeholder="Ad daxil edin (EN)" className="rounded-md" />
+                                <Input placeholder="Ad daxil edin (EN)" className="rounded-md"/>
                             </Form.Item>
                             <Form.Item
                                 name="nameRu"
                                 label="Yemək Adı (RU)"
-                                rules={[{ required: true, message: "Ad daxil edin!" }]}
+                                rules={[{required: true, message: "Ad daxil edin!"}]}
                             >
-                                <Input placeholder="Ad daxil edin (RU)" className="rounded-md" />
+                                <Input placeholder="Ad daxil edin (RU)" className="rounded-md"/>
                             </Form.Item>
                             <Form.Item
                                 name="price"
                                 label="Qiymət"
                                 rules={[
-                                    { required: true, message: "Qiymət daxil edin!" },
+                                    {required: true, message: "Qiymət daxil edin!"},
                                     {
                                         validator: (_, value) =>
                                             value >= 0
@@ -563,12 +576,12 @@ const AdminCategoryDetailTable = ({ id }) => {
                                 />
                             </Form.Item>
                             <Form.Item name="categoryId" hidden>
-                                <Input />
+                                <Input/>
                             </Form.Item>
                             <Form.Item name="productImage" label="Şəkil">
                                 <Upload {...editUploadProps} maxCount={1}>
                                     <div>
-                                        <UploadOutlined />
+                                        <UploadOutlined/>
                                         <div>Şəkil Yüklə</div>
                                     </div>
                                 </Upload>

@@ -1,9 +1,11 @@
 #adminPage {
   display: flex;
   background-color: rgb(243, 243, 243);
-
+  height: 100vh;
   .adminRightBar {
     width: 100%;
+    overflow-y: scroll;
+
     .adminTopBar{
       height: 60px;
       border-bottom: 1px solid #e4e4e4;

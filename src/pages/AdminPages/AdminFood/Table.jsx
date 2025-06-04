@@ -16,7 +16,7 @@ import {
 } from "antd";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined, SearchOutlined } from "@ant-design/icons";
 import {
     useDeleteProductsMutation,
     useGetAllCategoryQuery,
@@ -31,8 +31,8 @@ const FoodTable = () => {
     const foods = getAllProducts?.data || [];
     const { data: getAllCategory } = useGetAllCategoryQuery();
     const categories = getAllCategory?.data || [];
-    const [postFood, { isLoading: isAdding }] = usePostProductsMutation(); // Add isLoading for add mutation
-    const [putFood, { isLoading: isUpdating }] = usePutProductsMutation(); // Add isLoading for update mutation
+    const [postFood, { isLoading: isAdding }] = usePostProductsMutation();
+    const [putFood, { isLoading: isUpdating }] = usePutProductsMutation();
     const [deleteFood] = useDeleteProductsMutation();
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -41,6 +41,7 @@ const FoodTable = () => {
     const [editingFood, setEditingFood] = useState(null);
     const [fileList, setFileList] = useState([]);
     const [editFileList, setEditFileList] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Helper function to generate category and subcategory options with OptGroup
     const getCategoryOptions = () => {
@@ -209,6 +210,11 @@ const FoodTable = () => {
         }
     };
 
+    // Filter foods based on search query
+    const filteredFoods = foods.filter((food) =>
+        food.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     const columns = [
         {
             title: "#",
@@ -320,17 +326,26 @@ const FoodTable = () => {
 
     return (
         <div className="p-4">
-            <Button
-                type="primary"
-                onClick={showAddModal}
-                className="mb-4 bg-blue-500 hover:bg-blue-600"
-            >
-                +
-            </Button>
+            <div style={{ marginBottom: "15px", display: "flex", gap: "10px", alignItems: "center" }}>
+                <Input
+                    placeholder="Yemək adına görə axtar"
+                    prefix={<SearchOutlined />}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ width: 300, borderRadius: "6px" }}
+                />
+                <Button
+                    type="primary"
+                    onClick={showAddModal}
+                    className="bg-blue-500 hover:bg-blue-600"
+                >
+                    +
+                </Button>
+            </div>
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={foods}
+                dataSource={filteredFoods}
                 pagination={{ pageSize: 5 }}
                 expandable={{
                     expandedRowRender,
@@ -452,8 +467,8 @@ const FoodTable = () => {
                             type="primary"
                             htmlType="submit"
                             className="mr-2 bg-blue-500 hover:bg-blue-600 rounded-md"
-                            loading={isAdding} // Show loading indicator
-                            disabled={isAdding} // Disable button during loading
+                            loading={isAdding}
+                            disabled={isAdding}
                         >
                             Əlavə Et
                         </Button>
@@ -572,8 +587,8 @@ const FoodTable = () => {
                             type="primary"
                             htmlType="submit"
                             className="mr-2 bg-blue-500 hover:bg-blue-600 rounded-md"
-                            loading={isUpdating} // Show loading indicator
-                            disabled={isUpdating} // Disable button during loading
+                            loading={isUpdating}
+                            disabled={isUpdating}
                         >
                             Düzəliş Et
                         </Button>
