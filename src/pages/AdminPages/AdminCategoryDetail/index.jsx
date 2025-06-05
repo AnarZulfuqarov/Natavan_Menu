@@ -1,5 +1,6 @@
 import AdminCategoryDetailTable from "./Table.jsx";
 import { useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom"; // Import useLocation
 import SubCategoryTable from "./Table2.jsx";
 import { useGetCategorysByIdQuery, usePostCategorysMutation } from "../../../services/userApi.jsx";
 import { Button, Col, Form, Input, Modal, Row } from "antd";
@@ -128,7 +129,7 @@ function AdminCategoryDetail() {
     const [addForm] = Form.useForm();
     const data = getCategorysById?.data?.subCategories || [];
     const [isModalVisible, setIsModalVisible] = useState(false);
-
+    const location = useLocation()
     const showModal = () => {
         setIsModalVisible(true);
         addForm.setFieldsValue({ parentCategoryId: id });
@@ -172,20 +173,22 @@ function AdminCategoryDetail() {
             showToast(errorMsg, "error");
         }
     };
-
+    const hideButtonPaths = `/admin/categories/${id}`;
     return (
         <div>
-            <div style={{ marginBottom: "16px" }}>
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={showModal}
-                    loading={isPosting}
-                    disabled={isPosting}
-                >
-                    Yeni Kateqoriya Əlavə edin
-                </Button>
-            </div>
+            {hideButtonPaths.includes(location.pathname) && ( // Conditionally render the button
+                <div style={{ marginBottom: "16px" }}>
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={showModal}
+                        loading={isPosting}
+                        disabled={isPosting}
+                    >
+                        Yeni Kateqoriya Əlavə edin
+                    </Button>
+                </div>
+            )}
             {data.length === 0 ? null : <SubCategoryTable id={id} />}
             <AdminCategoryDetailTable id={id} />
             <Modal

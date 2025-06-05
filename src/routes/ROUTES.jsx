@@ -50,6 +50,10 @@ const router = [
             {
                 path: "/admin/categories/:id",
                 element:<AdminCategoryDetail/>
+            },
+            {
+                path: "/admin/subCategories/:id",
+                element:<AdminCategoryDetail/>
             }
         ]
     },

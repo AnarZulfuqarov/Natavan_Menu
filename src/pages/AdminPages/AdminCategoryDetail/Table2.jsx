@@ -254,7 +254,7 @@ const SubCategoryTable = ({ id }) => {
     );
 
     const handleViewDetails = (record) => {
-        navigate(`/admin/categories/${record.id}`);
+        navigate(`/admin/subCategories/${record.id}`);
     };
 
     // Table columns
