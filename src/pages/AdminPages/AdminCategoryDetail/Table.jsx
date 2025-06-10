@@ -22,6 +22,7 @@ import {
     usePostProductsMutation,
     usePutProductsMutation,
     usePutPoductsOrderMutation,
+    useDeleteProductsImageMutation, // Yeni endpoint için mutasyon
 } from "/src/services/userApi.jsx";
 import {PRODUCT_IMAGES} from "/src/contants.js";
 import {useDrag, useDrop} from 'react-dnd';
@@ -77,6 +78,7 @@ const AdminCategoryDetailTable = ({id}) => {
     const [putFood, {isLoading: isUpdating}] = usePutProductsMutation();
     const [deleteFood] = useDeleteProductsMutation();
     const [putProductsOrder, {isLoading: isOrdering}] = usePutPoductsOrderMutation();
+    const [deleteProductImage] = useDeleteProductsImageMutation(); // Yeni endpoint mutasyonu
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [isEditModal, setIsEditModal] = useState(false);
     const [form] = Form.useForm();
@@ -239,7 +241,14 @@ const AdminCategoryDetailTable = ({id}) => {
         }
 
         try {
+            // Normal güncelleme işlemi
             await putFood(payload).unwrap();
+
+            // Eğer editFileList boşsa ve önceden resim varsa, resim silme endpoint'ini çağır
+            if (editFileList.length === 0 && editingFood.productImage) {
+                await deleteProductImage(editingFood.id).unwrap();
+            }
+
             message.success("Yemək uğurla yeniləndi!");
             setIsEditModal(false);
             editForm.resetFields();
@@ -345,12 +354,14 @@ const AdminCategoryDetailTable = ({id}) => {
         fileList,
         onChange: handleUploadChange,
         listType: "picture-card",
+        maxCount: 1, // Sadece bir resim seçilebilir
     };
 
     const editUploadProps = {
         fileList: editFileList,
         onChange: handleEditUploadChange,
         listType: "picture-card",
+        maxCount: 1, // Sadece bir resim seçilebilir
     };
 
     // Table components for react-dnd
