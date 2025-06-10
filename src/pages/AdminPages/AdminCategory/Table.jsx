@@ -472,7 +472,7 @@ const CategoryTable = () => {
                     loading={isPosting}
                     disabled={isPosting}
                 >
-                    Yeni Kateqoriya Əlavə edin
+                    Yeni Ana Kateqoriya Əlavə edin
                 </Button>
             </div>
 

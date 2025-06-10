@@ -185,7 +185,7 @@ function AdminCategoryDetail() {
                         loading={isPosting}
                         disabled={isPosting}
                     >
-                        Yeni Kateqoriya Əlavə edin
+                        Yeni Alt Kateqoriya Əlavə edin
                     </Button>
                 </div>
             )}
