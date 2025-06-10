@@ -521,7 +521,6 @@ const SubCategoryTable = ({ id }) => {
                             <Form.Item
                                 label="Kart Şəkli"
                                 name="categoryImage"
-                                rules={[{ required: !editUploadedFile, message: "Şəkil seçin və ya yükləyin!" }]}
                             >
                                 <div>
                                     <Upload {...uploadPropsEdit} accept="image/*">

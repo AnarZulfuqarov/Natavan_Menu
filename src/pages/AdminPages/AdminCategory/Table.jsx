@@ -529,7 +529,6 @@ const CategoryTable = () => {
                             <Form.Item
                                 label="Kart Şəkli"
                                 name="categoryImage"
-                                rules={[{ required: true, message: "Şəkil seçin!" }]}
                             >
                                 <ImagePickerGallery
                                     onChange={(value) => addForm.setFieldsValue({ categoryImage: value })}
@@ -581,7 +580,6 @@ const CategoryTable = () => {
                             <Form.Item
                                 label="Kart Şəkli"
                                 name="categoryImage"
-                                rules={[{ required: true, message: "Şəkil seçin!" }]}
                             >
                                 <ImagePickerGallery
                                     onChange={(value) => editForm.setFieldsValue({ categoryImage: value })}
