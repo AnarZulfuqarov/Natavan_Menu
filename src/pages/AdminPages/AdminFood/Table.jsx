@@ -23,6 +23,7 @@ import {
     useGetAllProductsQuery,
     usePostProductsMutation,
     usePutProductsMutation,
+    useDeleteProductsImageMutation
 } from "../../../services/userApi.jsx";
 import { PRODUCT_IMAGES } from "../../../contants.js";
 
@@ -34,6 +35,7 @@ const FoodTable = () => {
     const [postFood, { isLoading: isAdding }] = usePostProductsMutation();
     const [putFood, { isLoading: isUpdating }] = usePutProductsMutation();
     const [deleteFood] = useDeleteProductsMutation();
+    const [deleteProductImage] = useDeleteProductsImageMutation();
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [form] = Form.useForm();
@@ -186,7 +188,14 @@ const FoodTable = () => {
         }
 
         try {
+            // Normal güncelleme işlemi
             await putFood(payload).unwrap();
+
+            // Eğer editFileList boşsa, yani resim silinmişse, ikinci endpoint'e istek at
+            if (editFileList.length === 0 && editingFood.productImage) {
+                await deleteProductImage(editingFood.id).unwrap();
+            }
+
             message.success("Yemək uğurla yeniləndi!");
             setIsEditModalVisible(false);
             editForm.resetFields();

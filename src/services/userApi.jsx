@@ -94,6 +94,12 @@ export const userApi = createApi({
                 method: 'DELETE',
             }),
         }),
+        deleteProductsImage: builder.mutation({
+            query: (id) => ({
+                url: `/Products/delete/image/?id=${id}`,
+                method: 'DELETE',
+            }),
+        }),
 
     }),
 })
@@ -112,6 +118,7 @@ export const {
     useDeleteProductsMutation,
     usePostProductsMutation,
     usePutPoductsOrderMutation,
+    useDeleteProductsImageMutation
 
 
 } = userApi
